@@ -54,6 +54,9 @@ add_definitions(-DDEBUG)
 # for desktop&mcu code
 add_definitions(-DMCU_TARGET)
 
+add_definitions(-DNO_LAN)
+add_definitions(-DUSE_FRAMEBUFFER)
+
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
 	message("Compiling with debug info")
 	set(CMAKE_CXX_DEBUG_FLAGS "-gdwarf-2 -Og")

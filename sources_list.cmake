@@ -17,7 +17,7 @@ set(GROUP_CORE_SRC
 		Core/Src/tim.c
 		Core/Src/usart.c
 		Core/Src/wwdg.c
-
+		Core/Src/rtc.c
 )
 
 set(GROUP_CORE_SRC_DISPLAY
@@ -33,10 +33,10 @@ set(GROUP_CORE_SRC_HELPERS
 		Core/Src/helpers/my_comm.c
 		Core/Src/helpers/myCRT.c
 		Core/Src/helpers/num_helpers.c
-		Core/Src/helpers/rtc_helpers.c
-		Core/Src/helpers/test_ascii_helpers.c
-		Core/Src/helpers/watchdog.c
+#		Core/Src/helpers/rtc_helpers.c
+                Core/Src/helpers/watchdog.c
 		Core/Src/helpers/xprintf.c
+		Core/Src/helpers/hex_gen.c
 )
 
 set(GROUP_CORE_SRC_APP
@@ -70,6 +70,8 @@ set(GROUP_DRIVERS_STM32F1XX_HAL_DRIVER_SRC
 		Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c
 		Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c
 		Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_wwdg.c
+		Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rtc.c
+		Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rtc_ex.c
 )
 
 set(GROUP_MIDDLEWARES_THIRD_PARTY_FREERTOS_SOURCE_CMSIS_RTOS
@@ -92,6 +94,7 @@ set(GROUP_MIDDLEWARES_THIRD_PARTY_FREERTOS_SOURCE
 include_directories(Core/Inc)
 include_directories(Core/Inc/display)
 include_directories(Core/Inc/helpers)
+include_directories(Core/Inc/app)
 include_directories(Drivers/STM32F1xx_HAL_Driver/Inc)
 include_directories(Drivers/STM32F1xx_HAL_Driver/Inc/Legacy)
 include_directories(Middlewares/Third_Party/FreeRTOS/Source/include)
@@ -99,6 +102,7 @@ include_directories(Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS)
 include_directories(Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3)
 include_directories(Drivers/CMSIS/Device/ST/STM32F1xx/Include)
 include_directories(Drivers/CMSIS/Include)
+
 
 
 set(LIST_OF_SOURCES

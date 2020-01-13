@@ -18,7 +18,10 @@
 
 #include "my_comm.h"
 #include "usart.h"
-#include "lan.h"
+
+#ifndef NO_LAN
+ #include "lan.h"
+#endif
 
 uint8_t TxBuf1[BUFSIZE];
 uint8_t TxBuf2[BUFSIZE];
@@ -183,16 +186,21 @@ ErrorStatus Transmit(const void *ptr)
 		taskEXIT_CRITICAL();
 	}
 
+#ifndef NO_LAN
 	if (ptr == NULL) {
+#endif
 		XmitStatus = HAL_UART_Transmit_DMA(
-			&huart3, (uint8_t *)pXmitTxBuf, (uint16_t)tmptail);
+			&DEBUG_UART, (uint8_t *)pXmitTxBuf, (uint16_t)tmptail);
 		result = (XmitStatus == HAL_ERROR) ? ERROR : SUCCESS;
+#ifndef NO_LAN
 	} else {
 		result = write_socket((socket_p)ptr, (uint8_t*)pXmitTxBuf,
 				      (int32_t)tmptail);
-
 		XmitState = STATE_UNLOCKED;
 	}
+#else
+	(void)ptr;
+#endif
 fExit:
 	TransmitFuncRunning = false;
 	return result;
@@ -255,6 +263,7 @@ ErrorStatus Transmit_RTOS(const void *ptr)
 	vTaskPrioritySet(DiagPrTaskHandle, task_prio);
 
 	/* here all the conditions are OK. let's send! */
+#ifndef NO_LAN
 	if (ptr != NULL) {
 		result = write_socket((socket_p)ptr,
 					pXmitTxBuf,
@@ -262,9 +271,10 @@ ErrorStatus Transmit_RTOS(const void *ptr)
 
 		XmitState = STATE_UNLOCKED;
 	} else {
+#endif
 		/* transmit over USART */
 		XmitStatus = HAL_UART_Transmit_DMA(
-			&huart3, (uint8_t *)pXmitTxBuf, (uint16_t)tmptail);
+			&DEBUG_UART, (uint8_t *)pXmitTxBuf, (uint16_t)tmptail);
 		result = (XmitStatus == HAL_ERROR) ? ERROR : SUCCESS;
 
 		/* we have to wait a notification INSTEAD ! */
@@ -275,7 +285,12 @@ ErrorStatus Transmit_RTOS(const void *ptr)
 				// error!!!
 			}
 		}
+#ifndef NO_LAN
 	}
+#else
+	(void)ptr;
+#endif
+
 fExit:
 	return result;
 }
@@ -287,7 +302,7 @@ fExit:
  */
 void my_comm_HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if (huart == &huart3) {
+	if (huart == &DEBUG_UART) {
 		/* transmit completed! */
 		XmitState = STATE_UNLOCKED;
 

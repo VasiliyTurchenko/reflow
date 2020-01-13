@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
   * File Name          : framebuffer.h
-  * Description        : This file contains all the functions prototypes for 
-  *                      the framebuffer-based functions  
+  * Description        : This file contains all the functions prototypes for
+  *                      the framebuffer-based functions
   ******************************************************************************
 	*	v.0.0.1
 	* 16-11-2017
@@ -11,15 +11,15 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __framebuffer_H
-#define __framebuffer_H
+#ifndef FRAMEBUFFER_H
+#define FRAMEBUFFER_H
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <limits.h>
 
-#ifdef		__USE_FRAMEBUFFER 
+#ifdef		USE_FRAMEBUFFER
 
 #define	MAX_CHAR_SIZE		32				//	max char size 32*32 pix
 #define	TFS                     (MAX_CHAR_SIZE/CHAR_BIT)+1
@@ -55,7 +55,7 @@ typedef struct struct_FrameBuffer {	// () Framebuffer parameters
 	enum		{PIO, I2C, SPI} FBiface;
 	bool		Locked;
 	bool		FBOrientatonX;	// X - pixels in bytes along X; !X - along Y
-	
+
 }	struct_FrameBuffer;
 
 typedef	struct_FrameBuffer*		ptr_fb;

@@ -75,11 +75,19 @@ void Error_Handler(void);
 #define D_C_GPIO_Port GPIOB
 #define SPI_CS_Pin GPIO_PIN_12
 #define SPI_CS_GPIO_Port GPIOB
+#define DISP_RESET_Pin GPIO_PIN_14
+#define DISP_RESET_GPIO_Port GPIOB
 #define BOOST_HEATER_Pin GPIO_PIN_4
 #define BOOST_HEATER_GPIO_Port GPIOB
 #define MAIN_HEATER_Pin GPIO_PIN_5
 #define MAIN_HEATER_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
+
+#define DEBUG_UART huart1
+
+extern volatile uint32_t TX_done_flag;
+extern volatile uint32_t RX_ready_flag;
+
 
 /* USER CODE END Private defines */
 

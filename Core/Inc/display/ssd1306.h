@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
   * File Name          : ssd1306.h
-  * Description        : This file contains all the functions prototypes for 
-  *                      the ssd1306 OLED controller  
+  * Description        : This file contains all the functions prototypes for
+  *                      the ssd1306 OLED controller
   ******************************************************************************
 	*	v.0.0.1
 	* 18-11-2017
@@ -11,12 +11,12 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __ssd1306_H
-#define __ssd1306_H
+#ifndef SSD1306_H
+#define SSD1306_H
 
 #include "globaldef.h"
 
-#ifdef		__USE_FRAMEBUFFER
+#ifdef		USE_FRAMEBUFFER
 
 #include <stdint.h>
 #include "framebuffer.h"
