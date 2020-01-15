@@ -36,9 +36,16 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "startup.h"
+#include "xprintf.h"
+#include "my_comm.h"
+
+#ifdef USE_FRAMEBUFFER
+
 #include "framebuffer.h"
 #include "ssd1306.h"
-#include "xprintf.h"
+
+#endif
 
 /* USER CODE END Includes */
 
@@ -60,7 +67,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile uint32_t TX_done_flag;
+volatile uint32_t SPI2_TxCplt_flag;
 volatile uint32_t RX_ready_flag;
 
 /* USER CODE END PV */
@@ -74,44 +81,6 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-#ifdef USE_FRAMEBUFFER
-extern struct_FrameBuffer fb1;
-extern struct_Context *context1;
-#endif
-
-extern unsigned char FrameBuffer1[(128 / CHAR_BIT) * (64)];
-
-/**
- * @brief fb_fill_unfill
- */
-void fb_fill_unfill(void)
-{
-#ifdef USE_FRAMEBUFFER
-	uint32_t zzz;
-	for (zzz = 0; zzz < sizeof(FrameBuffer1); zzz++)
-		FrameBuffer1[zzz] = 0xFF;
-//	context1->pDevFB->fUpdateScreen(&hspi2, context1->pDevFB);
-	HAL_Delay(500);
-
-	for (zzz = 0; zzz < sizeof(FrameBuffer1); zzz++)
-		FrameBuffer1[zzz] = 0x7F;
-//	context1->pDevFB->fUpdateScreen(&hspi2, context1->pDevFB);
-	HAL_Delay(500);
-
-	for (zzz = 0; zzz < sizeof(FrameBuffer1); zzz++)
-		FrameBuffer1[zzz] = 0x00;
-//	context1->pDevFB->fUpdateScreen(&hspi2, context1->pDevFB);
-	HAL_Delay(500);
-
-
-
-
-
-#else
-	UNUSED(0);
-#endif
-}
 
 /* USER CODE END 0 */
 
@@ -139,6 +108,10 @@ int main(void)
 
 	/* USER CODE BEGIN SysInit */
 
+	/* save the reboot flag */
+	RCC_CSR_copy = RCC->CSR;
+	SET_BIT(RCC->CSR, RCC_CSR_RMVF); /* clear the reboot flags */
+
 	/* USER CODE END SysInit */
 
 	/* Initialize all configured peripherals */
@@ -155,30 +128,29 @@ int main(void)
 	MX_RTC_Init();
 	/* USER CODE BEGIN 2 */
 
-	/* initialize display */
-	InitSSD1303(&hspi2);
-	FB_Init();
+	if (AppStartUp() != SUCCESS) {
+		NVIC_SystemReset();
+	}
 
+	HAL_Delay(500U);
+	Transmit_non_RTOS = false;
+	xfunc_out = myxfunc_out_RTOS; /* diagnostic print */
 	/* USER CODE END 2 */
 
 	/* Call init function for freertos objects (in freertos.c) */
-	//  MX_FREERTOS_Init();
+	MX_FREERTOS_Init();
 
 	/* Start scheduler */
-	//  osKernelStart();
+	osKernelStart();
 
 	/* We should never get here as control is now taken by the scheduler */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
-		/* USER CODE END WHILE */
+	/* USER CODE END WHILE */
 
-#ifdef USE_FRAMEBUFFER
-		fb_fill_unfill();
-#endif
-
-		/* USER CODE BEGIN 3 */
+	/* USER CODE BEGIN 3 */
 	}
 	/* USER CODE END 3 */
 }
@@ -301,8 +273,9 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	if (hspi == &hspi2) {
-		TX_done_flag = 1U;
+		SPI2_TxCplt_flag = 1U;
 #ifdef USE_FRAMEBUFFER
+		extern struct_Context *context1;
 		CompleteUpdateSSD1306_callback(hspi, context1->pDevFB);
 #endif
 	}
@@ -348,10 +321,35 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 								context1->pDevFB);
 			}
 		}
-
 #endif
 	}
 
+	/* act with serial port */
+	if (htim->Instance == TIM1) {
+		if (Transmit_non_RTOS) {
+			/* every millisecond */
+			if (TransmitFuncRunning == false) {
+				Transmit(NULL);
+			}
+		}
+	}
+
+	if (htim->Instance == TIM1) {
+		if ((HAL_GetTick() & 0x01U) == 0U) {
+
+			BaseType_t xHigherPriorityTaskWoken;
+			if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+				extern osThreadId kbd_taskHandle;
+				if (xTaskNotifyFromISR(kbd_taskHandle, 1U,
+						       eSetValueWithOverwrite,
+						       &xHigherPriorityTaskWoken) !=
+				    pdPASS) {
+				// error
+				}
+				portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+			}
+		}
+	}
 	/* USER CODE END Callback 1 */
 }
 

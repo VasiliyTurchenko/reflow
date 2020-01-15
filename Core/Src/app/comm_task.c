@@ -8,3 +8,27 @@
 
 
 #include "comm_task.h"
+#include "my_comm.h"
+#include "watchdog.h"
+#include "task_tokens.h"
+#include "logging.h"
+
+/**
+ * @brief comm_task_init
+ */
+void comm_task_init(void)
+{
+	register_magic(COMM_TASK_MAGIC);
+//	i_am_alive(COMM_TASK_MAGIC);
+	log_xputs(MSG_LEVEL_INFO, " started.");
+}
+
+/**
+ * @brief comm_task_run
+ */
+void comm_task_run(void)
+{
+	Transmit_RTOS(NULL);
+//	i_am_alive(COMM_TASK_MAGIC);
+	vTaskDelay(pdMS_TO_TICKS(COMM_TASK_PERIOD));
+}

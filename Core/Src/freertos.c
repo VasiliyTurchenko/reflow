@@ -25,7 +25,11 @@
 #include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */     
+/* USER CODE BEGIN Includes */
+
+#include "comm_task.h"
+#include "kbd_task.h"
+#include "ui_task.h"
 
 /* USER CODE END Includes */
 
@@ -46,6 +50,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+
+osMutexId xfunc_outMutexHandle;
+osStaticMutexDef_t xfunc_outMutex_ControlBlock;
+
 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
@@ -69,7 +77,7 @@ osStaticThreadDef_t ui_task_ControlBlock;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-   
+
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
@@ -117,14 +125,14 @@ __weak void vApplicationTickHook( void )
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
 static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
-  
+
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
 {
   *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
   *ppxIdleTaskStackBuffer = &xIdleStack[0];
   *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
   /* place for user code */
-}                   
+}
 /* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
@@ -134,11 +142,14 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-       
+
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
+
+	osMutexStaticDef(xfunc_outMutex, &xfunc_outMutex_ControlBlock);
+	xfunc_outMutexHandle = osMutexCreate(osMutex(xfunc_outMutex));
+
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -187,7 +198,7 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
   * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used 
+  * @param  argument: Not used
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
@@ -203,22 +214,19 @@ void StartDefaultTask(void const * argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_Start_kbd_task */
 /**
 * @brief Function implementing the kbd_task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Start_kbd_task */
-void Start_kbd_task(void const * argument)
+void __attribute__((noreturn)) Start_kbd_task(void const * argument)
 {
-  /* USER CODE BEGIN Start_kbd_task */
-  /* Infinite loop */
+	kbd_task_init();
+	(void)argument;
   for(;;)
   {
-    osDelay(1);
+    kbd_task_run();
   }
-  /* USER CODE END Start_kbd_task */
 }
 
 /* USER CODE BEGIN Header_Start_display_task */
@@ -239,22 +247,21 @@ void Start_display_task(void const * argument)
   /* USER CODE END Start_display_task */
 }
 
-/* USER CODE BEGIN Header_Start_comm_task */
+
 /**
 * @brief Function implementing the comm_task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Start_comm_task */
-void Start_comm_task(void const * argument)
+void __attribute__((noreturn)) Start_comm_task(void const * argument)
 {
-  /* USER CODE BEGIN Start_comm_task */
-  /* Infinite loop */
+  comm_task_init();
+  (void)argument;
+
   for(;;)
   {
-    osDelay(1);
+    comm_task_run();
   }
-  /* USER CODE END Start_comm_task */
 }
 
 /* USER CODE BEGIN Header_Start_temperatur_task */
@@ -275,27 +282,21 @@ void Start_temperatur_task(void const * argument)
   /* USER CODE END Start_temperatur_task */
 }
 
-/* USER CODE BEGIN Header_Start_ui_task */
 /**
 * @brief Function implementing the ui_task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Start_ui_task */
-void Start_ui_task(void const * argument)
+void __attribute__((noreturn)) Start_ui_task(void const * argument)
 {
-  /* USER CODE BEGIN Start_ui_task */
-  /* Infinite loop */
+  ui_task_init();
+  (void)argument;
+
   for(;;)
   {
-    osDelay(1);
+	ui_task_run();
   }
-  /* USER CODE END Start_ui_task */
 }
 
-/* Private application code --------------------------------------------------*/
-/* USER CODE BEGIN Application */
-     
-/* USER CODE END Application */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+/***************************** END OF FILE ************************************/

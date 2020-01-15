@@ -37,6 +37,7 @@ set(GROUP_CORE_SRC_HELPERS
                 Core/Src/helpers/watchdog.c
 		Core/Src/helpers/xprintf.c
 		Core/Src/helpers/hex_gen.c
+		Core/Src/helpers/i2c_eeprom.c
 )
 
 set(GROUP_CORE_SRC_APP
@@ -45,6 +46,7 @@ set(GROUP_CORE_SRC_APP
 		Core/Src/app/kbd_task.c
 		Core/Src/app/temperatur_task.c
 		Core/Src/app/ui_task.c
+		Core/Src/app/startup.c
 )
 
 

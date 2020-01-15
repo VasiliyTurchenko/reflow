@@ -13,10 +13,8 @@
  extern "C" {
 #endif
 
-
-#include <stdint.h>
-#include <stddef.h>
-#include <limits.h>
+void comm_task_init(void);
+void comm_task_run(void);
 
 #ifdef __cplusplus
  }

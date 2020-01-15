@@ -94,16 +94,13 @@
 /*---------------------the function updates ssd1306-controlled screen */
 uint8_t UpdateSSD1306(SPI_HandleTypeDef *OLED_hspi, ptr_fb fb)
 {
-	extern volatile uint32_t TX_done_flag;
+	extern volatile uint32_t SPI2_TxCplt_flag;
 	if (fb->Locked)
-		return 1;
+		return 1U;
 	fb->Locked = true;
-	TX_done_flag = 0;
-
+	SPI2_TxCplt_flag = 0U;
 	DCD;
 	CSL;
-	//LED0L;
-	//	HAL_SPI_Transmit_IT (OLED_hspi,fb->pFB, (128/CHAR_BIT)*(64));
 	HAL_SPI_Transmit_DMA(OLED_hspi, fb->pFB, (128 / CHAR_BIT) * (64));
 	return 0U;
 }
@@ -114,7 +111,6 @@ void WriteCmdSSD1306(SPI_HandleTypeDef *OLED_hspi, uint8_t cmd)
 {
 	DCC;
 	CSL;
-	// HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size, uint32_t Timeout)
 	HAL_SPI_Transmit(OLED_hspi, &cmd, 0x01, 0x500);
 	CSH;
 	DCD;
@@ -126,7 +122,6 @@ uint8_t CompleteUpdateSSD1306_callback(SPI_HandleTypeDef *OLED_hspi, ptr_fb fb)
 {
 	WriteCmdSSD1306(OLED_hspi, NOP_CMD);
 	CSH;
-	//	LED0H;
 	fb->Locked = false;
 	return 0U;
 }

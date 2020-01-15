@@ -81,11 +81,13 @@ void Error_Handler(void);
 #define BOOST_HEATER_GPIO_Port GPIOB
 #define MAIN_HEATER_Pin GPIO_PIN_5
 #define MAIN_HEATER_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 
-#define DEBUG_UART huart1
+#define DEBUG_UART	huart1
+#define AT24C04
 
-extern volatile uint32_t TX_done_flag;
+extern volatile uint32_t SPI2_TxCplt_flag;
 extern volatile uint32_t RX_ready_flag;
 
 

@@ -43,7 +43,7 @@ volatile size_t MaxTail = 0U;
 /* defined in freertos.c */
 extern osMutexId xfunc_outMutexHandle;
 
-extern osThreadId DiagPrTaskHandle;
+extern osThreadId comm_taskHandle;
 
 /******************************** initialisation functions ********************/
 
@@ -224,14 +224,14 @@ ErrorStatus Transmit_RTOS(const void *ptr)
 
 	/* temporary raise task priority */
 	UBaseType_t task_prio;
-	task_prio = uxTaskPriorityGet(DiagPrTaskHandle);
+	task_prio = uxTaskPriorityGet(comm_taskHandle);
 	/* set the new maximal priority */
-	vTaskPrioritySet(DiagPrTaskHandle,
+	vTaskPrioritySet(comm_taskHandle,
 			 ((UBaseType_t)configMAX_PRIORITIES - (UBaseType_t)1U));
 
 	/* take the first mutex */
 	if (osMutexWait(xfunc_outMutexHandle, 0) != osOK) {
-		vTaskPrioritySet(DiagPrTaskHandle, task_prio);
+		vTaskPrioritySet(comm_taskHandle, task_prio);
 		goto fExit; /* try next time*/
 	}
 
@@ -255,12 +255,12 @@ ErrorStatus Transmit_RTOS(const void *ptr)
 	} else {
 		/* error */
 		osMutexRelease(xfunc_outMutexHandle);
-		vTaskPrioritySet(DiagPrTaskHandle, task_prio);
+		vTaskPrioritySet(comm_taskHandle, task_prio);
 		goto fExit;
 	}
 
 	/* restore usual priority */
-	vTaskPrioritySet(DiagPrTaskHandle, task_prio);
+	vTaskPrioritySet(comm_taskHandle, task_prio);
 
 	/* here all the conditions are OK. let's send! */
 #ifndef NO_LAN
@@ -300,7 +300,7 @@ fExit:
  * @brief HAL_UART_TxCpltCallback
  * @param huart
  */
-void my_comm_HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if (huart == &DEBUG_UART) {
 		/* transmit completed! */
@@ -310,7 +310,7 @@ void my_comm_HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 		BaseType_t xHigherPriorityTaskWoken;
 
 		if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-			if (xTaskNotifyFromISR(DiagPrTaskHandle, 1U,
+			if (xTaskNotifyFromISR(comm_taskHandle, 1U,
 					       eSetValueWithOverwrite,
 					       &xHigherPriorityTaskWoken) !=
 			    pdPASS) {
