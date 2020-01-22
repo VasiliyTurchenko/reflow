@@ -324,6 +324,19 @@ uint8_t whereXY(uint32_t *x, uint32_t *y)
 }
 
 /**
+ * @brief fast_clear_screen
+ * @return
+ */
+uint8_t fast_clear_screen(void)
+{
+	size_t	bufsize = (128U / CHAR_BIT) * (64U);
+	for (size_t i = 0U; i < bufsize; i++) {
+		FrameBuffer1[i] = 0U;
+	}
+	return 0U;
+}
+
+/**
  * @brief zprint prints the asciiz string into current context, returns the actual number of printed symbols
  * @brief correctly deals with \n
  * @brief 25-11-2017 15:53

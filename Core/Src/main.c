@@ -40,6 +40,8 @@
 #include "xprintf.h"
 #include "my_comm.h"
 
+#include "exti.h"
+
 #ifdef USE_FRAMEBUFFER
 
 #include "framebuffer.h"
@@ -123,10 +125,13 @@ int main(void)
 	//  MX_IWDG_Init();
 	MX_SPI2_Init();
 	MX_TIM2_Init();
+	MX_TIM3_Init();
 	MX_USART1_UART_Init();
 	//  MX_WWDG_Init();
 	MX_RTC_Init();
 	/* USER CODE BEGIN 2 */
+
+	HAL_TIM_Base_Start_IT(&htim3);
 
 	if (AppStartUp() != SUCCESS) {
 		NVIC_SystemReset();
@@ -314,6 +319,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 	/* USER CODE BEGIN Callback 1 */
 	if (htim->Instance == TIM1) {
+
+	/* increment us counter */
+	/* add 1000 us */
+	counter_1us += 1000U;
+
+
 #ifdef USE_FRAMEBUFFER
 		if ((HAL_GetTick() % 64U) == 0U) {
 			if (context1->pDevFB->fUpdateScreen != NULL) {
@@ -333,8 +344,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			}
 		}
 	}
-
-	if (htim->Instance == TIM1) {
+#if(0)
+	if (htim->Instance == TIM3) {
+		HAL_GPIO_TogglePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin);
 		if ((HAL_GetTick() & 0x01U) == 0U) {
 
 			BaseType_t xHigherPriorityTaskWoken;
@@ -350,6 +362,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			}
 		}
 	}
+#endif
 	/* USER CODE END Callback 1 */
 }
 

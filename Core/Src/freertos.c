@@ -30,6 +30,7 @@
 #include "comm_task.h"
 #include "kbd_task.h"
 #include "ui_task.h"
+#include "control_task.h"
 
 /* USER CODE END Includes */
 
@@ -59,18 +60,23 @@ osStaticMutexDef_t xfunc_outMutex_ControlBlock;
 osThreadId defaultTaskHandle;
 uint32_t defaultTaskBuffer[ 128 ];
 osStaticThreadDef_t defaultTaskControlBlock;
+
 osThreadId kbd_taskHandle;
 uint32_t kbd_task_Buffer[ 128 ];
 osStaticThreadDef_t kbd_task_ControlBlock;
-osThreadId display_taskHandle;
-uint32_t display_task_Buffer[ 256 ];
-osStaticThreadDef_t display_task_ControlBlock;
+
+osThreadId control_taskHandle;
+uint32_t control_task_Buffer[ 256 ];
+osStaticThreadDef_t control_task_ControlBlock;
+
 osThreadId comm_taskHandle;
 uint32_t comm_task_Buffer[ 200 ];
 osStaticThreadDef_t comm_task_ControlBlock;
+
 osThreadId temperatur_taskHandle;
 uint32_t temperatur_task_Buffer[ 200 ];
 osStaticThreadDef_t temperatur_task_ControlBlock;
+
 osThreadId ui_taskHandle;
 uint32_t ui_task_Buffer[ 200 ];
 osStaticThreadDef_t ui_task_ControlBlock;
@@ -82,7 +88,7 @@ osStaticThreadDef_t ui_task_ControlBlock;
 
 void StartDefaultTask(void const * argument);
 void Start_kbd_task(void const * argument);
-void Start_display_task(void const * argument);
+void Start_control_task(void const * argument);
 void Start_comm_task(void const * argument);
 void Start_temperatur_task(void const * argument);
 void Start_ui_task(void const * argument);
@@ -174,8 +180,8 @@ void MX_FREERTOS_Init(void) {
   kbd_taskHandle = osThreadCreate(osThread(kbd_task), NULL);
 
   /* definition and creation of display_task */
-  osThreadStaticDef(display_task, Start_display_task, osPriorityNormal, 0, 256, display_task_Buffer, &display_task_ControlBlock);
-  display_taskHandle = osThreadCreate(osThread(display_task), NULL);
+  osThreadStaticDef(control_task, Start_control_task, osPriorityRealtime, 0, 256, control_task_Buffer, &control_task_ControlBlock);
+  control_taskHandle = osThreadCreate(osThread(control_task), NULL);
 
   /* definition and creation of comm_task */
   osThreadStaticDef(comm_task, Start_comm_task, osPriorityAboveNormal, 0, 200, comm_task_Buffer, &comm_task_ControlBlock);
@@ -229,22 +235,19 @@ void __attribute__((noreturn)) Start_kbd_task(void const * argument)
   }
 }
 
-/* USER CODE BEGIN Header_Start_display_task */
 /**
 * @brief Function implementing the display_task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Start_display_task */
-void Start_display_task(void const * argument)
+void __attribute__((noreturn)) Start_control_task(void const * argument)
 {
-  /* USER CODE BEGIN Start_display_task */
-  /* Infinite loop */
+  control_task_init();
+  (void)argument;
   for(;;)
   {
-    osDelay(1);
+    control_task_run();
   }
-  /* USER CODE END Start_display_task */
 }
 
 

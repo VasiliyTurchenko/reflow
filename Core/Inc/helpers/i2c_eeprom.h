@@ -46,6 +46,7 @@ typedef struct eeprom_handle {
 
 /* STM32 Smart EEPROM chip */
 extern const eeprom_handle_t at24c04;
+extern const char *read_err;
 
 /* */
 ErrorStatus Clear_I2C_EEPROM(const eeprom_handle_t *eeprom);
@@ -57,6 +58,16 @@ ErrorStatus Read_Byte_I2C_EEPROM(uint8_t * addr_to, \
 ErrorStatus Write_Byte_I2C_EEPROM(const uint8_t * addr_from, \
 				  size_t eeaddr, \
 				  const eeprom_handle_t * eeprom);
+
+ErrorStatus Read_Array_I2C_EEPROM(uint8_t *addr_to,
+				   size_t num_bytes,
+				   size_t eeaddr,
+				   const eeprom_handle_t *eeprom);
+
+ErrorStatus Write_Array_I2C_EEPROM(const uint8_t *addr_from,
+				   size_t num_bytes,
+				   size_t eeaddr,
+				   const eeprom_handle_t *eeprom);
 
 ErrorStatus Read_Page_I2C_EEPROM(uint8_t * addr_to,
 				  size_t pagenum, \
@@ -73,6 +84,8 @@ void Test_I2C_EEPROM(const eeprom_handle_t * eeprom);
 __attribute ((noreturn)) void I2C_EEPROM_Write_Error_Handler();
 
 __attribute ((noreturn)) void I2C_EEPROM_Read_Error_Handler();
+
+uint32_t crc32_over_eeprom(void);
 
 #ifdef __cplusplus
 }

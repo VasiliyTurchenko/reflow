@@ -143,6 +143,10 @@ uint32_t zpointY(uint32_t x, uint32_t y, uint32_t color);
  */
 uint32_t zline(int x0, int y0, int x1, int y1, uint32_t color);
 
+/*
+ * 20-Jan-2020
+ */
+uint8_t fast_clear_screen(void);
 
 #endif	/* USE_FRAMEBUFFER */
 #endif /* __framebuffer_H */

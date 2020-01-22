@@ -17,7 +17,7 @@ extern "C" {
 
 #define	COMM_TASK_MAGIC		(uint32_t)(MAGIC_SEED)
 #define KBD_TASK_MAGIC		(uint32_t)(MAGIC_SEED + 1U)
-#define DISPLAY_TASK_MAGIC	(uint32_t)(MAGIC_SEED + 2U)
+#define CONTROL_TASK_MAGIC	(uint32_t)(MAGIC_SEED + 2U)
 #define TEMPERATUR_TASK_MAGIC	(uint32_t)(MAGIC_SEED + 3U)
 #define UI_TASK_MAGIC		(uint32_t)(MAGIC_SEED + 4U)
 

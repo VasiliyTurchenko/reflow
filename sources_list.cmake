@@ -38,15 +38,31 @@ set(GROUP_CORE_SRC_HELPERS
 		Core/Src/helpers/xprintf.c
 		Core/Src/helpers/hex_gen.c
 		Core/Src/helpers/i2c_eeprom.c
+		Core/Src/helpers/ftoa.c
+		Core/Src/helpers/sys_helpers.c
 )
 
 set(GROUP_CORE_SRC_APP
 	        Core/Src/app/comm_task.c
-		Core/Src/app/display_task.c
+		Core/Src/app/control_task.c
 		Core/Src/app/kbd_task.c
 		Core/Src/app/temperatur_task.c
 		Core/Src/app/ui_task.c
 		Core/Src/app/startup.c
+)
+
+set(GROUP_CORE_SRC_BSP
+	        Core/Src/bsp/exti.c
+		Core/Src/bsp/temerature_measurement.c
+		Core/Src/bsp/parameters_storage.c
+)
+
+set(GROUP_CORE_SRC_MENU
+	        Core/Src/menu/menu.c
+)
+
+set(GROUP_CORE_SRC_PROFILES
+	        Core/Src/profiles/profiles.c
 )
 
 
@@ -97,6 +113,9 @@ include_directories(Core/Inc)
 include_directories(Core/Inc/display)
 include_directories(Core/Inc/helpers)
 include_directories(Core/Inc/app)
+include_directories(Core/Inc/bsp)
+include_directories(Core/Inc/menu)
+include_directories(Core/Inc/profiles)
 include_directories(Drivers/STM32F1xx_HAL_Driver/Inc)
 include_directories(Drivers/STM32F1xx_HAL_Driver/Inc/Legacy)
 include_directories(Middlewares/Third_Party/FreeRTOS/Source/include)
@@ -116,4 +135,7 @@ set(LIST_OF_SOURCES
 		${GROUP_CORE_SRC_DISPLAY}
 		${GROUP_CORE_SRC_HELPERS}
 		${GROUP_CORE_SRC_APP}
+		${GROUP_CORE_SRC_BSP}
+		${GROUP_CORE_SRC_MENU}
+		${GROUP_CORE_SRC_PROFILES}
 )

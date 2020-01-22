@@ -20,6 +20,8 @@ const eeprom_handle_t at24c04 = {
 	.write_timeout_ms = 6U,
 };
 
+const char *read_err = "I2C EEPROM read error!";
+
 /**
  * @brief soft_reset
  * @param eeprom
@@ -113,7 +115,7 @@ ErrorStatus Clear_I2C_EEPROM(const eeprom_handle_t *eeprom)
 	if (eeprom == NULL) {
 		goto fExit;
 	}
-	const uint8_t	pad = 0xAAU;
+	const uint8_t	pad = 0x00U;
 	for (size_t i = 0U; i < eeprom->eeprom_size; i++) {
 		if (Write_Byte_I2C_EEPROM(&pad, i, eeprom) != SUCCESS) {
 			goto fExit;
@@ -123,6 +125,71 @@ ErrorStatus Clear_I2C_EEPROM(const eeprom_handle_t *eeprom)
 fExit:
 	return retVal;
 }
+
+/**
+ * @brief Read_Array_I2C_EEPROM reads arbitrary number of bytes from the EEPROM
+ * @param addr_to where to store read data
+ * @param num_bytes an amount to be read
+ * @param eeaddr startting address in the EEPROM
+ * @param eeprom pointer to the EEPROM handle
+ * @return ERROR or SUCCESS
+ */
+ErrorStatus Read_Array_I2C_EEPROM(uint8_t *addr_to,
+				   size_t num_bytes,
+				   size_t eeaddr,
+				   const eeprom_handle_t *eeprom)
+{
+	ErrorStatus retVal = SUCCESS;
+	if ( (addr_to == NULL) || (eeprom == NULL)) {
+		retVal = ERROR;
+		goto fExit;
+	}
+
+	while (num_bytes > 0U) {
+		retVal = Read_Byte_I2C_EEPROM(addr_to, eeaddr, eeprom);
+		if (retVal == ERROR) {
+			break;
+		}
+		addr_to++;
+		eeaddr++;
+		num_bytes--;
+	}
+fExit:
+	return retVal;
+}
+
+/**
+ * @brief Write_Array_I2C_EEPROM writes arbitrary number of bytes to the EEPROM
+ * @param addr_from where from write data out
+ * @param num_bytes an amount to be written
+ * @param eeaddr startting address in the EEPROM
+ * @param eeprom pointer to the EEPROM handle
+ * @return ERROR or SUCCESS
+ */
+ErrorStatus Write_Array_I2C_EEPROM(const uint8_t *addr_from,
+				   size_t num_bytes,
+				   size_t eeaddr,
+				   const eeprom_handle_t *eeprom)
+{
+	ErrorStatus retVal = SUCCESS;
+	if ( (addr_from == NULL) || (eeprom == NULL)) {
+		retVal = ERROR;
+		goto fExit;
+	}
+
+	while (num_bytes > 0U) {
+		retVal = Write_Byte_I2C_EEPROM(addr_from, eeaddr, eeprom);
+		if (retVal == ERROR) {
+			break;
+		}
+		addr_from++;
+		eeaddr++;
+		num_bytes--;
+	}
+fExit:
+	return retVal;
+}
+
 
 
 /**
@@ -189,3 +256,40 @@ __attribute((noreturn)) void I2C_EEPROM_Write_Error_Handler(void);
 
 __attribute((noreturn)) void I2C_EEPROM_Read_Error_Handler(void);
 
+/**
+ * @brief crc32_over_eeprom
+ * @return
+ */
+uint32_t crc32_over_eeprom()
+{
+	uint32_t res_crc = 0U;
+	uint8_t buf[16] = { 0U };
+	size_t steps = at24c04.eeprom_size / 16U;
+
+	for (size_t i = 0U; i < steps - 1U; i++) {
+		for (size_t j = 0U; j < 16U; j++) {
+			size_t eepr_addr = (i * 16U) + j;
+			if (Read_Byte_I2C_EEPROM(&buf[j], eepr_addr,
+						 &at24c04) != SUCCESS) {
+				log_xputs(MSG_LEVEL_FATAL, read_err);
+				HAL_Delay(500U);
+				NVIC_SystemReset();
+			}
+			/* 16 bytes are read */
+			res_crc = CRC32_helper(buf, 16U, res_crc);
+		}
+	}
+	size_t last_chunk = 16U - sizeof(uint32_t);
+	for (size_t j = 0U; j < last_chunk; j++) {
+		size_t eepr_addr = ((steps - 2U) * 16U) + j;
+		if (Read_Byte_I2C_EEPROM(&buf[j], eepr_addr, &at24c04) !=
+		    SUCCESS) {
+			log_xputs(MSG_LEVEL_FATAL, read_err);
+			HAL_Delay(500U);
+			NVIC_SystemReset();
+		}
+	}
+	/* 12 bytes are read */
+	res_crc = CRC32_helper(buf, last_chunk, res_crc);
+	return res_crc;
+}

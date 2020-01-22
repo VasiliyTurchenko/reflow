@@ -30,10 +30,17 @@
 #include "i2c_eeprom.h"
 #include "crc32_helpers.h"
 
+#include "parameters_storage.h"
+
+#include "exti.h"
+#include "temerature_measurement.h"
+
 #ifdef USE_FRAMEBUFFER
 
 #include "framebuffer.h"
 #include "ssd1306.h"
+
+#include "menu.h"
 
 extern struct_FrameBuffer fb1;
 extern struct_Context *context1;
@@ -92,6 +99,14 @@ ErrorStatus AppStartUp(void)
 	InitSSD1303(&hspi2);
 	FB_Init();
 	fb_fill_unfill();
+	out_device_t tmp_dev = {zprint, gotoXY, fast_clear_screen};
+	if (init_menu_system(tmp_dev) != SUCCESS) {
+		log_xputs(MSG_LEVEL_FATAL, "Error menu initialization");
+		HAL_Delay(500U);
+		NVIC_SystemReset();
+	}
+
+
 #endif
 
 	/* put logo to the display */
@@ -110,55 +125,44 @@ ErrorStatus AppStartUp(void)
 	//	Test_I2C_EEPROM(&at24c04);
 	eeprom_crc32_check();
 
+	/* load config pool */
+	if (load_cfg_pool() != SUCCESS ) {
+		log_xputs(MSG_LEVEL_FATAL, "Can't read EEPROM!");
+		HAL_Delay(500U);
+		NVIC_SystemReset();
+	}
 	/* check keys */
 
+	/* if key up and key down are pressed at the start-up time, we'll go to full re-init */
 
 	/* check mains sync irq */
 
+	/* enable exti */
+	/* risin' edge occurs when mains voltage gets lower than threshold */
+
+	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+	HAL_Delay(1010U);
+
+	/* calculate exti period using tim1 counter as reference */
+
+	uint32_t mains_half_period = get_mains_half_period();
+	log_xprintf(MSG_LEVEL_INFO, "Mains half-period is %d us.", mains_half_period);
+
+	/* start adc conversion using DMA */
+
+	if (start_ADC() != SUCCESS) {
+		log_xputs(MSG_LEVEL_FATAL, "ADC conversion start error!");
+		HAL_Delay(500U);
+		NVIC_SystemReset();
+	}
+#if(0)
+	/* some menu tests */
+	test_draw_menu_level();
+#endif
 	retVal = SUCCESS;
 
 fExit:
 	return retVal;
-}
-
-static const char *read_err = "I2C EEPROM read error!";
-
-/**
- * @brief crc32_over_eeprom
- * @return
- */
-static uint32_t crc32_over_eeprom()
-{
-	uint32_t res_crc = 0U;
-	uint8_t buf[16] = { 0U };
-	size_t steps = at24c04.eeprom_size / 16U;
-
-	for (size_t i = 0U; i < steps - 1U; i++) {
-		for (size_t j = 0U; j < 16U; j++) {
-			size_t eepr_addr = (i * 16U) + j;
-			if (Read_Byte_I2C_EEPROM(&buf[j], eepr_addr,
-						 &at24c04) != SUCCESS) {
-				log_xputs(MSG_LEVEL_FATAL, read_err);
-				HAL_Delay(500U);
-				NVIC_SystemReset();
-			}
-			/* 16 bytes are read */
-			res_crc = CRC32_helper(buf, 16U, res_crc);
-		}
-	}
-	size_t last_chunk = 16U - sizeof(uint32_t);
-	for (size_t j = 0U; j < last_chunk; j++) {
-		size_t eepr_addr = ((steps - 2U) * 16U) + j;
-		if (Read_Byte_I2C_EEPROM(&buf[j], eepr_addr, &at24c04) !=
-		    SUCCESS) {
-			log_xputs(MSG_LEVEL_FATAL, read_err);
-			HAL_Delay(500U);
-			NVIC_SystemReset();
-		}
-	}
-	/* 12 bytes are read */
-	res_crc = CRC32_helper(buf, last_chunk, res_crc);
-	return res_crc;
 }
 
 /**
