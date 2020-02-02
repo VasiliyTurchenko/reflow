@@ -48,6 +48,8 @@ ErrorStatus start_ADC(void);
 ErrorStatus calibrate_TC1(void);
 ErrorStatus calibrate_TC2(void);
 
+void print_current_temperature(void);
+
 #ifdef __cplusplus
 }
 #endif

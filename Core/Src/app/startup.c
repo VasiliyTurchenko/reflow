@@ -34,6 +34,7 @@
 
 #include "exti.h"
 #include "temerature_measurement.h"
+#include "door_servo.h"
 
 #ifdef USE_FRAMEBUFFER
 
@@ -136,6 +137,9 @@ ErrorStatus AppStartUp(void)
 	/* if key up and key down are pressed at the start-up time, we'll go to full re-init */
 
 	/* check mains sync irq */
+
+	/* load door pwm cal data */
+	door_servo_init_module();
 
 	/* enable exti */
 	/* risin' edge occurs when mains voltage gets lower than threshold */

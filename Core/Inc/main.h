@@ -77,15 +77,22 @@ void Error_Handler(void);
 #define SPI_CS_GPIO_Port GPIOB
 #define DISP_RESET_Pin GPIO_PIN_14
 #define DISP_RESET_GPIO_Port GPIOB
-#define BOOST_HEATER_Pin GPIO_PIN_4
-#define BOOST_HEATER_GPIO_Port GPIOB
-#define MAIN_HEATER_Pin GPIO_PIN_5
-#define MAIN_HEATER_GPIO_Port GPIOB
+#define BOTTOM_HEATER_Pin GPIO_PIN_4
+#define BOTTOM_HEATER_GPIO_Port GPIOB
+#define TOP_HEATER_Pin GPIO_PIN_5
+#define TOP_HEATER_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
 #define DEBUG_UART	huart1
 #define AT24C04
+
+/* define as 1 if only one thermocouple is installed */
+/* define as 0 if there are two of them */
+#define	SINGLE_TC	1
+
+#define MIN_PWM_DURATION (3540U)
+#define MAX_PWM_DURATION (3900U)
 
 extern volatile uint32_t SPI2_TxCplt_flag;
 extern volatile uint32_t RX_ready_flag;

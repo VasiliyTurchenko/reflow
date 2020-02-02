@@ -15,6 +15,7 @@
 #include "parameters_storage.h"
 #include "logging.h"
 #include "sys_helpers.h"
+#include "hex_gen.h"
 
 /* samples array size for one channel */
 #define ADC_CHANNEL_ARRAY_SIZE 64U
@@ -48,6 +49,10 @@ averaged_data_t get_average_adc_meas(void)
 
 	retVal.average_val0 = (uint16_t)(data0 / ADC_CHANNEL_ARRAY_SIZE);
 	retVal.average_val1 = (uint16_t)(data1 / ADC_CHANNEL_ARRAY_SIZE);
+
+#if (SINGLE_TC == 1)
+	retVal.average_val1 = retVal.average_val0;
+#endif
 
 	return retVal;
 }
@@ -134,7 +139,7 @@ static ErrorStatus calibrate_TC(tc_cal_data_t *p_tc)
 		vTaskDelay(pdMS_TO_TICKS(10U));
 	}
 
-	if (key == ESC_KEY_PRESSED) {
+	if (key == ESC_KEY_RELEASED) {
 		goto fExit;
 	}
 
@@ -146,9 +151,11 @@ static ErrorStatus calibrate_TC(tc_cal_data_t *p_tc)
 	zprint("when ready..\n", NORM);
 	wait_for_key(ENTER_KEY_RELEASED);
 
+	/* reset validity */
+	p_tc->valid = false;
+	sys_helpers_delay_ms(400U);
 	/* measure at 0C */
 	averaged_data_t meas0;
-	sys_helpers_delay_ms(200U);
 	meas0 = get_average_adc_meas();
 
 	fast_clear_screen();
@@ -160,9 +167,7 @@ static ErrorStatus calibrate_TC(tc_cal_data_t *p_tc)
 
 	/* measure at 100C */
 	averaged_data_t meas100;
-	sys_helpers_delay_ms(200U);
 	meas100 = get_average_adc_meas();
-
 	/* y = A*X + B */
 	float B;
 	float A;
@@ -172,11 +177,11 @@ static ErrorStatus calibrate_TC(tc_cal_data_t *p_tc)
 
 	if (sens_num == 1U) {
 		B = (float)(meas0.average_val0);
-		A = (float)(100.0F / meas100.average_val0 - meas0.average_val0);
+		A = (float)(100.0F / (meas100.average_val0 - meas0.average_val0) );
 		zprint("TC1", NORM);
 	} else {
 		B = (float)(-meas0.average_val1);
-		A = (float)(100.0F / meas100.average_val1 - meas0.average_val1);
+		A = (float)(100.0F / (meas100.average_val1 - meas0.average_val1) );
 		zprint("TC2", NORM);
 	}
 	zprint(" calibrated.\n", NORM);
@@ -213,4 +218,35 @@ ErrorStatus calibrate_TC1(void)
 ErrorStatus calibrate_TC2(void)
 {
 	return calibrate_TC(tc2_cal_data);
+}
+
+/**
+ * @brief print_current_temperature
+ */
+void print_current_temperature(void)
+{
+	fast_clear_screen();
+	clear_key_buffer();
+	while(true) {
+		gotoXY(0U, 8U);
+		averaged_data_t tmp = get_temperature();
+		char	buf[6] = {0};
+		uint16_to_asciiz(tmp.average_val0, (char*)&buf);
+		zprint("TC1 = ", NORM);
+		zprint(buf, NORM);
+		zprint(" C\n", NORM);
+
+		uint16_to_asciiz(tmp.average_val1, (char*)&buf);
+		zprint("TC2 = ", NORM);
+		zprint(buf, NORM);
+		zprint(" C\n", NORM);
+
+		zprint("\nPress ANY key\n to return\n", NORM);
+		sys_helpers_delay_ms(50U);
+
+		if (get_key() != NO_KEY) {
+			break;
+		}
+	}
+
 }

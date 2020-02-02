@@ -20,6 +20,16 @@ extern "C" {
 /* maximum time between two EXTIs*/
 #define	MS_TO_WAIT_EXTI		13U
 
+/* setpoint upper limit, %% */
+#define SETPOINT_UPPER_LIM	120U
+
+/* working mode */
+
+#define HEATER_CTRL_MODE_PARALLEL 1
+#define HEATER_CTRL_MODE_SERIAL 2
+
+#define HEATER_CTRL_MODE HEATER_CTRL_MODE_PARALLEL
+
 /* task notifications */
 #define	HEATER_START		((uint32_t)0x5AU)
 #define	EXTI_ARRIVED		((uint32_t)0xA5U)
@@ -38,8 +48,8 @@ extern "C" {
 */
 typedef	struct control_task_set {
 	uint32_t	mains_half_period;
-	uint8_t		main_heater_setpoint;
-	uint8_t		boost_heater_setpoint;
+	uint8_t		top_heater_setpoint;
+	uint8_t		bottom_heater_setpoint;
 } control_task_set_t;
 
 extern control_task_set_t	control_task_setpoints;

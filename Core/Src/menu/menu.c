@@ -33,6 +33,10 @@ extern struct_Context *context1;
 extern unsigned char FrameBuffer1[(128 / CHAR_BIT) * (64)];
 #endif
 
+/* flag to redraw menu level */
+static _Bool force_redraw = false;
+
+
 static out_device_t menu_drawer = { NULL, NULL, NULL };
 
 /**
@@ -96,6 +100,7 @@ const menu_item_t * manual_heater_ctrl(const menu_item_t * item)
 const menu_item_t * test_profiles(const menu_item_t * item)
 {
 	test_profiles_get_temp_for_time();
+	force_redraw = true;
 	return item;
 }
 
@@ -132,6 +137,7 @@ const menu_item_t * test_save_cal_data(const menu_item_t * item)
 const menu_item_t * calibrate_TC1_wrapper(const menu_item_t * item)
 {
 	calibrate_TC1();
+	force_redraw = true;
 	return item;
 }
 
@@ -143,6 +149,22 @@ const menu_item_t * calibrate_TC1_wrapper(const menu_item_t * item)
 const menu_item_t * calibrate_TC2_wrapper(const menu_item_t * item)
 {
 	calibrate_TC2();
+	force_redraw = true;
+	return item;
+}
+
+const menu_item_t * temperature_info_wrapper(const menu_item_t * item)
+{
+	print_current_temperature();
+	force_redraw = true;
+	return item;
+}
+
+const menu_item_t * pwm_maunal_ctr_wrapper(const menu_item_t * item)
+{
+	extern void pwm_manual(void);
+	pwm_manual();
+	force_redraw = true;
 	return item;
 }
 
@@ -183,7 +205,7 @@ const menu_item_t L0_i0 = {
 	.key_up_action = up_action,
 	.key_dn_action = dn_action,
 	.key_esc_action = NULL,
-	.key_enter_action = NULL,
+	.key_enter_action = temperature_info_wrapper,
 
 	.menu_string = "INFORMATION     ",
 
@@ -213,7 +235,7 @@ const menu_item_t L0_i2 = {
 	.key_up_action = up_action,
 	.key_dn_action = dn_action,
 	.key_esc_action = NULL,
-	.key_enter_action = NULL,
+	.key_enter_action = pwm_maunal_ctr_wrapper,
 
 	.menu_string = "OPEN DOOR       ",
 
@@ -479,7 +501,7 @@ void draw_menu_level(const menu_item_t *item)
 
 	static const menu_item_t * last_current = NULL;
 
-	if (last_current == item) {
+	if ((last_current == item) && (!force_redraw)) {
 		/* nothing to do */
 		goto fExit;
 	}
@@ -525,6 +547,7 @@ void draw_menu_level(const menu_item_t *item)
 		//		menu_drawer.xfunc_print("\n", mode);
 		draw_item = draw_item->next;
 	}
+	force_redraw = false;
 fExit:
 	return;
 }

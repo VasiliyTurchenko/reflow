@@ -13,6 +13,7 @@
 #include "watchdog.h"
 #include "task_tokens.h"
 #include "logging.h"
+#include "main.h"
 
 #ifdef STM32F103xB
 #include "stm32f1xx.h"
@@ -93,8 +94,10 @@ void clear_key_buffer(void)
  */
 key_code_t get_key(void)
 {
+
 	key_code_t retVal = last_key_event;
 	clear_key_buffer();
+
 	return retVal;
 }
 
@@ -140,10 +143,12 @@ void kbd_task_run(void)
 			// error!!!
 		}
 	}
+
 	/* it's time to read GPIO */
 	acq_array[acq_pos] = (uint16_t)GPIOA->IDR & keys_mask;
 	acq_pos++;
 	if (acq_pos == KBD_WIN_SIZE) {
+
 		acq_pos = 0U;
 
 		uint8_t key_up_cnt = 0U;
@@ -171,6 +176,8 @@ void kbd_task_run(void)
 		}
 
 		/* events prioritization */
+		key_code_t	backup_evt = last_key_event;
+
 		last_key_event = detect_key_event(key_up_cnt, &key_up_state);
 		key_code_t dn = detect_key_event(key_dn_cnt, &key_dn_state);
 		if (dn != NO_KEY) {
@@ -185,6 +192,10 @@ void kbd_task_run(void)
 		key_code_t esc = detect_key_event(key_esc_cnt, &key_esc_state);
 		if (esc != NO_KEY) {
 			last_key_event = esc;
+		}
+
+		if (last_key_event == NO_KEY) {
+			last_key_event = backup_evt;
 		}
 	}
 	//	i_am_alive(KBD_TASK_MAGIC);
@@ -203,6 +214,7 @@ static key_code_t detect_key_event(uint8_t up_cnt, uint8_t *key_state)
 		if (*key_state == 1U) {
 			if (key_state == &key_up_state) {
 				retVal = UP_KEY_RELEASED;
+//HAL_GPIO_WritePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin, GPIO_PIN_RESET);
 			} else if (key_state == &key_dn_state) {
 				retVal = DN_KEY_RELEASED;
 			} else if (key_state == &key_enter_state) {
@@ -217,6 +229,7 @@ static key_code_t detect_key_event(uint8_t up_cnt, uint8_t *key_state)
 		if (*key_state == 0U) {
 			if (key_state == &key_up_state) {
 				retVal = UP_KEY_PRESSED;
+//HAL_GPIO_WritePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin, GPIO_PIN_SET);
 			} else if (key_state == &key_dn_state) {
 				retVal = DN_KEY_PRESSED;
 			} else if (key_state == &key_enter_state) {

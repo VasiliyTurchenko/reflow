@@ -22,7 +22,7 @@ extern "C" {
 #include "i2c_eeprom.h"
 
 #include "temerature_measurement.h"
-#include "door_pwm.h"
+#include "door_servo.h"
 #include "heat_cool.h"
 
 /* predefined config tokens */

@@ -28,6 +28,10 @@
 
 #include "menu.h"
 #include "temerature_measurement.h"
+#include "sys_helpers.h"
+#include "main.h"
+
+#include "tim.h"
 
 extern osThreadId ui_taskHandle;
 extern osThreadId control_taskHandle;
@@ -51,7 +55,7 @@ static void print_main_set(void)
 	zprint("MAIN:\0", NORM);
 
 	uint8_t buf[4] = { 0 };
-	uint8_to_asciiz((uint8_t)control_task_setpoints.main_heater_setpoint,
+	uint8_to_asciiz((uint8_t)control_task_setpoints.top_heater_setpoint,
 			buf);
 	zprint(buf, NORM);
 }
@@ -63,7 +67,7 @@ static void print_boost_set(void)
 	gotoXY(20, 28);
 	zprint("BOOST:\0", NORM);
 	uint8_t buf[4] = { 0 };
-	uint8_to_asciiz((uint8_t)control_task_setpoints.boost_heater_setpoint,
+	uint8_to_asciiz((uint8_t)control_task_setpoints.bottom_heater_setpoint,
 			buf);
 	zprint(buf, NORM);
 }
@@ -73,15 +77,19 @@ static void print_boost_set(void)
  */
 void manual_heater_control(void)
 {
-	control_task_setpoints.main_heater_setpoint = 0U;
-	control_task_setpoints.boost_heater_setpoint =
-		50U - control_task_setpoints.main_heater_setpoint;
+	control_task_setpoints.top_heater_setpoint = 0U;
+	control_task_setpoints.bottom_heater_setpoint =
+		50U - control_task_setpoints.top_heater_setpoint;
 
 	_Bool start_trigger = false;
 	_Bool lock = false;
 
 	while (true) {
 		key_code_t key_code;
+/*
+		clear_key_buffer();
+		sys_helpers_delay_ms(60U);
+*/
 		key_code = get_key();
 
 		if (key_code != NO_KEY) {
@@ -93,31 +101,29 @@ void manual_heater_control(void)
 			get_mains_half_period();
 		xTaskNotifyStateClear(ui_taskHandle);
 
-		if (key_code == UP_KEY_PRESSED) {
-			if (control_task_setpoints.main_heater_setpoint <
+		if (key_code == UP_KEY_RELEASED) {
+//HAL_GPIO_TogglePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin);
+			if (control_task_setpoints.top_heater_setpoint <
 			    100U) {
-				control_task_setpoints.main_heater_setpoint++;
+				control_task_setpoints.top_heater_setpoint++;
 			}
 
-			if (control_task_setpoints.boost_heater_setpoint > 0U) {
-				control_task_setpoints.boost_heater_setpoint--;
-			}
+			control_task_setpoints.bottom_heater_setpoint =
+				100U - control_task_setpoints.top_heater_setpoint;
 			print_main_set();
 			print_boost_set();
-		} else if (key_code == DN_KEY_PRESSED) {
-			if (control_task_setpoints.main_heater_setpoint > 0U) {
-				control_task_setpoints.main_heater_setpoint--;
+		} else if (key_code == DN_KEY_RELEASED) {
+			if (control_task_setpoints.top_heater_setpoint > 0U) {
+				control_task_setpoints.top_heater_setpoint--;
 			}
+			control_task_setpoints.bottom_heater_setpoint =
+				100U - control_task_setpoints.top_heater_setpoint;
 
-			if (control_task_setpoints.boost_heater_setpoint <
-			    100U) {
-				control_task_setpoints.boost_heater_setpoint++;
-			}
 			print_main_set();
 			print_boost_set();
-		} else if (key_code == ESC_KEY_PRESSED) {
-			control_task_setpoints.main_heater_setpoint = 0U;
-			control_task_setpoints.boost_heater_setpoint = 0U;
+		} else if (key_code == ESC_KEY_RELEASED) {
+			control_task_setpoints.top_heater_setpoint = 0U;
+			control_task_setpoints.bottom_heater_setpoint = 0U;
 			start_trigger = false;
 			lock = false;
 			gotoXY(20, 40);
@@ -155,9 +161,19 @@ void manual_heater_control(void)
 				start_trigger = false;
 				lock = true;
 			}
+//HAL_GPIO_WritePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin, GPIO_PIN_RESET);
 			gotoXY(20, 40);
 			if (lock) {
 				zprint("LOCK\0", NORM);
+			}
+
+			/* temp graph */
+			uint32_t elapsed = 0U;
+			if (HAL_GetTick() - elapsed >= 1000U) {
+				elapsed = HAL_GetTick();
+				averaged_data_t tmp = get_temperature();
+//				log_xprintf(MSG_LEVEL_EXT_INF, "Temperature [0, 1] = [ %d , %d]", tmp.average_val0, tmp.average_val1);
+				xprintf("%d, %d\n", elapsed / 1000U, tmp.average_val0);
 			}
 		}
 	}
@@ -193,3 +209,4 @@ void ui_task_run(void)
 }
 
 //	i_am_alive(ui_TASK_MAGIC);
+

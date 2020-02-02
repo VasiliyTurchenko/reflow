@@ -55,6 +55,7 @@ set(GROUP_CORE_SRC_BSP
 	        Core/Src/bsp/exti.c
 		Core/Src/bsp/temerature_measurement.c
 		Core/Src/bsp/parameters_storage.c
+		Core/Src/bsp/door_servo.c
 )
 
 set(GROUP_CORE_SRC_MENU
