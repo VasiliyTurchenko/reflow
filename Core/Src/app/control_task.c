@@ -27,6 +27,21 @@ typedef struct heater_runtime_info {
 	uint8_t extra_top_setpoint;
 } heater_runtime_info_t;
 
+
+typedef struct bresenham_runtime {
+	int32_t	x0;
+	int32_t y0;
+	int32_t x1;
+	int32_t y1;
+	int32_t err;
+	int32_t e2;
+	int32_t dx;
+	int32_t dy;
+	int32_t prev_y0;
+	int32_t sy;
+
+} bresenham_runtime_t;
+
 /* which task must be notified by this task */
 extern osThreadId ui_taskHandle;
 
@@ -47,6 +62,11 @@ extern osThreadId control_taskHandle;
 
 static _Bool Bresenham_control(heater_runtime_info_t *heater);
 
+static void init_bresenham_runtime(bresenham_runtime_t *b, uint8_t set_point);
+
+static uint8_t top_heater_state = 0U;
+static uint8_t bottom_heater_state = 0U;
+
 /**
  * @brief control_task_init
  */
@@ -60,23 +80,27 @@ void control_task_init(void)
 static inline void top_heater_off(void)
 {
 	HAL_GPIO_WritePin(TOP_HEATER_GPIO_Port, TOP_HEATER_Pin, GPIO_PIN_RESET);
+	top_heater_state = 0U;
 }
 
 static inline void top_heater_on(void)
 {
 	HAL_GPIO_WritePin(TOP_HEATER_GPIO_Port, TOP_HEATER_Pin, GPIO_PIN_SET);
+	top_heater_state = 1U;
 }
 
 static inline void bottom_heater_off(void)
 {
 	HAL_GPIO_WritePin(BOTTOM_HEATER_GPIO_Port, BOTTOM_HEATER_Pin,
 			  GPIO_PIN_RESET);
+	bottom_heater_state = 0U;
 }
 
 static inline void bottom_heater_on(void)
 {
 	HAL_GPIO_WritePin(BOTTOM_HEATER_GPIO_Port, BOTTOM_HEATER_Pin,
 			  GPIO_PIN_SET);
+	bottom_heater_state = 1U;
 }
 
 /**
@@ -212,6 +236,41 @@ fExit:
 
 #elif (HEATER_CTRL_MODE == HEATER_CTRL_MODE_PARALLEL)
 
+static void init_bresenham_runtime(bresenham_runtime_t *b, uint8_t set_point)
+{
+	b->x0 = 0;
+	b->x1 = 49;
+	b->y0 = 0;
+	b->y1 = set_point - 1;
+	b->e2 = 0;
+	b->dx = b->x1 - b->x0;
+	b->dy = b->y1 - b->y0;
+	b->err = ( b->dx > b->dy ? b->dx : -b->dy ) / 2;
+	b->prev_y0 = -1;
+	b->sy = (b->y0 < b->y1) ? 1 : -1;
+}
+
+
+/**
+ * @brief bresenham_step performs single algo step
+ * @param b pointer to the bresenham runtime
+ */
+static void bresenham_step(bresenham_runtime_t * b)
+{
+	if ( !((b->x0 == b->x1) && (b->y0 == b->y1)) ) {
+		b->e2 = b->err;
+
+		if (b->e2 > - b->dx) {
+			b->err -= b->dy;
+			b->x0++;	/* step x is always +1 */
+		}
+		if (b->e2 < b->dy) {
+			b->err += b->dx;
+			b->y0 += b->sy;
+		}
+	}
+}
+
 /**
  * @brief control_task_run
  */
@@ -275,6 +334,12 @@ void control_task_run(void)
 
 	enable_exti_notifications();
 
+	static bresenham_runtime_t b_top;
+	static bresenham_runtime_t b_btm;
+
+	init_bresenham_runtime(&b_top, top_heater_runtime.working_heater_setpoint);
+	init_bresenham_runtime(&b_btm, bottom_heater_runtime.working_heater_setpoint);
+
 	do {
 		/* wait for exti notification */
 		uint32_t ulNotifiedValue = 0U;
@@ -301,43 +366,37 @@ void control_task_run(void)
 
 			break;
 		}
-		/*
+/*
 	100% of power = odd exti for top, even exti for bottom
 */
 		/* exti occured */
 
-		if ((half_period_number & 0x01U) == 0U) {
-			/* odd half-period, do top*/
-			if (Bresenham_control(&top_heater_runtime)) {
-				/* on */
+		if (top_heater_runtime.working_heater_setpoint > 0U) {
+		/* process top heater */
+
+			if (b_top.y0 > b_top.prev_y0) {
 				top_heater_on();
 			} else {
 				top_heater_off();
 			}
-			/* add extra bottom power */
-			if (bottom_heater_runtime.extra_top_setpoint > 0U) {
-				bottom_heater_on();
-				bottom_heater_runtime.extra_top_setpoint--;
-			}
 
-		} else {
-			/* do bottom */
-			if (Bresenham_control(&bottom_heater_runtime)) {
-				/* on */
+			b_top.prev_y0 = b_top.y0;
+			bresenham_step(&b_top);
+		}
+
+		if (bottom_heater_runtime.working_heater_setpoint > 0U) {
+		/* process bottom heater */
+			if (b_btm.y0 > b_btm.prev_y0) {
 				bottom_heater_on();
 			} else {
 				bottom_heater_off();
 			}
-			/* add extra top power */
-			if (half_period_number > 25U) {
-				if (top_heater_runtime.extra_top_setpoint >
-				    0U) {
-					top_heater_on();
-					top_heater_runtime
-						.extra_top_setpoint--;
-				}
-			}
+
+			b_btm.prev_y0 = b_btm.y0;
+			bresenham_step(&b_btm);
 		}
+
+		xprintf("> %d, %d\n", half_period_number, top_heater_state);
 
 		/* wait 6 ms ON to ensure TRIAC goes on for this half-period */
 		vTaskDelay(pdMS_TO_TICKS(6U));
@@ -346,6 +405,7 @@ void control_task_run(void)
 		bottom_heater_off();
 		half_period_number++;
 	} while (half_period_number < 50U);
+	xputs("\n");
 
 fExit_w_notify:
 
@@ -362,24 +422,6 @@ fExit_w_notify:
 fExit:
 	//i_am_alive(CONTROL_TASK_MAGIC);
 	return;
-}
-
-static _Bool Bresenham_control(heater_runtime_info_t *heater)
-{
-	_Bool retVal = false;
-/*
- *	draw line from 0,0 to 24, heater->working_heater_setpoint
- *
-*/
-
-
-	return retVal;
-}
-
-#else
-
-void control_task_run(void)
-{
 }
 
 #endif

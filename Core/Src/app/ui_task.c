@@ -49,10 +49,10 @@ void ui_task_init(void)
 /**
  * @brief print_main_set
  */
-static void print_main_set(void)
+static void print_top_set(void)
 {
 	gotoXY(20, 20);
-	zprint("MAIN:\0", NORM);
+	zprint("TOP:\0", NORM);
 
 	uint8_t buf[4] = { 0 };
 	uint8_to_asciiz((uint8_t)control_task_setpoints.top_heater_setpoint,
@@ -62,10 +62,10 @@ static void print_main_set(void)
 /**
  * @brief print_boost_set
  */
-static void print_boost_set(void)
+static void print_bottom_set(void)
 {
 	gotoXY(20, 28);
-	zprint("BOOST:\0", NORM);
+	zprint("BOTTOM:\0", NORM);
 	uint8_t buf[4] = { 0 };
 	uint8_to_asciiz((uint8_t)control_task_setpoints.bottom_heater_setpoint,
 			buf);
@@ -77,7 +77,7 @@ static void print_boost_set(void)
  */
 void manual_heater_control(void)
 {
-	control_task_setpoints.top_heater_setpoint = 0U;
+	control_task_setpoints.top_heater_setpoint = 100U;
 	control_task_setpoints.bottom_heater_setpoint =
 		50U - control_task_setpoints.top_heater_setpoint;
 
@@ -108,19 +108,23 @@ void manual_heater_control(void)
 				control_task_setpoints.top_heater_setpoint++;
 			}
 
-			control_task_setpoints.bottom_heater_setpoint =
+
+			control_task_setpoints.bottom_heater_setpoint = control_task_setpoints.top_heater_setpoint;
+/*
 				100U - control_task_setpoints.top_heater_setpoint;
-			print_main_set();
-			print_boost_set();
+*/
+			print_top_set();
+			print_bottom_set();
 		} else if (key_code == DN_KEY_RELEASED) {
 			if (control_task_setpoints.top_heater_setpoint > 0U) {
 				control_task_setpoints.top_heater_setpoint--;
 			}
-			control_task_setpoints.bottom_heater_setpoint =
+			control_task_setpoints.bottom_heater_setpoint = control_task_setpoints.top_heater_setpoint;
+/*
 				100U - control_task_setpoints.top_heater_setpoint;
-
-			print_main_set();
-			print_boost_set();
+*/
+			print_top_set();
+			print_bottom_set();
 		} else if (key_code == ESC_KEY_RELEASED) {
 			control_task_setpoints.top_heater_setpoint = 0U;
 			control_task_setpoints.bottom_heater_setpoint = 0U;
@@ -128,13 +132,13 @@ void manual_heater_control(void)
 			lock = false;
 			gotoXY(20, 40);
 			zprint("    \0", NORM);
-			print_main_set();
-			print_boost_set();
+			print_top_set();
+			print_bottom_set();
 		} else if (((key_code == ENTER_KEY_RELEASED) ||
 			    start_trigger) &&
 			   (!lock)) {
-			print_main_set();
-			print_boost_set();
+			print_top_set();
+			print_bottom_set();
 
 			start_trigger = true;
 
