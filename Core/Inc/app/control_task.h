@@ -21,7 +21,11 @@ extern "C" {
 #define	MS_TO_WAIT_EXTI		13U
 
 /* setpoint upper limit, %% */
-#define SETPOINT_UPPER_LIM	120U
+//#define SETPOINT_UPPER_LIM	38U /*600W*/
+//#define SETPOINT_UPPER_LIM	34U /*500W*/
+#define SETPOINT_UPPER_LIM_TOP	32U /*425W*/
+#define SETPOINT_UPPER_LIM_BTM	28U /*425W*/
+
 
 /* working mode */
 
@@ -44,12 +48,15 @@ extern "C" {
 
 
 /*
- *
+ * settings for the half-period
 */
 typedef	struct control_task_set {
-	uint32_t	mains_half_period;
-	uint8_t		top_heater_setpoint;
-	uint8_t		bottom_heater_setpoint;
+	/* */
+	uint32_t	mains_half_period;	///<  averaged half-period duration
+
+	uint8_t		top_heater_setpoint;	///<  setpoint for top heater
+
+	uint8_t		bottom_heater_setpoint;	///<  setpoint bottom top heater
 } control_task_set_t;
 
 extern control_task_set_t	control_task_setpoints;

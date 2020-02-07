@@ -77,9 +77,8 @@ static void print_bottom_set(void)
  */
 void manual_heater_control(void)
 {
-	control_task_setpoints.top_heater_setpoint = 100U;
-	control_task_setpoints.bottom_heater_setpoint =
-		50U - control_task_setpoints.top_heater_setpoint;
+	control_task_setpoints.top_heater_setpoint = SETPOINT_UPPER_LIM_TOP;
+	control_task_setpoints.bottom_heater_setpoint =SETPOINT_UPPER_LIM_BTM;
 
 	_Bool start_trigger = false;
 	_Bool lock = false;
@@ -104,15 +103,15 @@ void manual_heater_control(void)
 		if (key_code == UP_KEY_RELEASED) {
 //HAL_GPIO_TogglePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin);
 			if (control_task_setpoints.top_heater_setpoint <
-			    100U) {
+			    SETPOINT_UPPER_LIM_TOP) {
 				control_task_setpoints.top_heater_setpoint++;
 			}
 
+			if (control_task_setpoints.bottom_heater_setpoint <
+			    SETPOINT_UPPER_LIM_BTM) {
+				control_task_setpoints.bottom_heater_setpoint++;
+			}
 
-			control_task_setpoints.bottom_heater_setpoint = control_task_setpoints.top_heater_setpoint;
-/*
-				100U - control_task_setpoints.top_heater_setpoint;
-*/
 			print_top_set();
 			print_bottom_set();
 		} else if (key_code == DN_KEY_RELEASED) {

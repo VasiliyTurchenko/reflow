@@ -294,10 +294,11 @@ void control_task_run(void)
 		goto fExit_w_notify;
 	}
 
+
 	/* check values */
-	if ((control_task_setpoints.top_heater_setpoint > SETPOINT_UPPER_LIM) |
+	if ((control_task_setpoints.top_heater_setpoint > SETPOINT_UPPER_LIM_TOP) |
 	    (control_task_setpoints.bottom_heater_setpoint >
-	     SETPOINT_UPPER_LIM)) {
+	     SETPOINT_UPPER_LIM_BTM)) {
 		// error!
 		control_task_result = CONTROL_TASK_RES_ERR_BAD_SETTINGS;
 		goto fExit_w_notify;
@@ -312,6 +313,15 @@ void control_task_run(void)
 
 	/* settings are ok */
 	reset_controls();
+
+
+	top_heater_runtime.working_heater_setpoint =
+		control_task_setpoints.top_heater_setpoint / 2U;
+
+	bottom_heater_runtime.working_heater_setpoint =
+		control_task_setpoints.bottom_heater_setpoint / 2U;
+
+/*
 	top_heater_runtime.working_heater_setpoint =
 		control_task_setpoints.top_heater_setpoint / 2U;
 
@@ -329,7 +339,7 @@ void control_task_run(void)
 			bottom_heater_runtime.working_heater_setpoint - 50U;
 		bottom_heater_runtime.working_heater_setpoint = 50U;
 	}
-
+*/
 	/* enable exti notifications */
 
 	enable_exti_notifications();
@@ -362,7 +372,6 @@ void control_task_run(void)
 			top_heater_off();
 			bottom_heater_off();
 			control_task_result = CONTROL_TASK_RES_ERR_BAD_NOTIF;
-			//		HAL_GPIO_TogglePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin);
 
 			break;
 		}
@@ -396,7 +405,7 @@ void control_task_run(void)
 			bresenham_step(&b_btm);
 		}
 
-		xprintf("> %d, %d\n", half_period_number, top_heater_state);
+//		xprintf("> %d, %d\n", half_period_number, top_heater_state);
 
 		/* wait 6 ms ON to ensure TRIAC goes on for this half-period */
 		vTaskDelay(pdMS_TO_TICKS(6U));
@@ -405,7 +414,7 @@ void control_task_run(void)
 		bottom_heater_off();
 		half_period_number++;
 	} while (half_period_number < 50U);
-	xputs("\n");
+//	xputs("\n");
 
 fExit_w_notify:
 
