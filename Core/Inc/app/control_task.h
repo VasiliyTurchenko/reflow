@@ -18,21 +18,18 @@ extern "C" {
 #include <limits.h>
 
 /* maximum time between two EXTIs*/
-#define	MS_TO_WAIT_EXTI		13U
+#define	MS_TO_WAIT_EXTI		(13U)
 
 /* setpoint upper limit, %% */
-//#define SETPOINT_UPPER_LIM	38U /*600W*/
-//#define SETPOINT_UPPER_LIM	34U /*500W*/
-#define SETPOINT_UPPER_LIM_TOP	32U /*425W*/
-#define SETPOINT_UPPER_LIM_BTM	28U /*425W*/
 
+//#define SETPOINT_UPPER_LIM_TOP	42U /* 740W*/
 
-/* working mode */
+#define SETPOINT_UPPER_LIM_TOP	(50U) /* 740W*/
+#define SETPOINT_UPPER_LIM_BTM	(32U) /* 671W*/
 
-#define HEATER_CTRL_MODE_PARALLEL 1
-#define HEATER_CTRL_MODE_SERIAL 2
-
-#define HEATER_CTRL_MODE HEATER_CTRL_MODE_PARALLEL
+/* for manual temperature control */
+#define MANUAL_LOW_TEMP		(20U)
+#define MANUAL_HIGH_TEMP	(250U)
 
 /* task notifications */
 #define	HEATER_START		((uint32_t)0x5AU)

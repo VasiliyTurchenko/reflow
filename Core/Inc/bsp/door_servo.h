@@ -18,6 +18,14 @@ extern "C" {
 #include <limits.h>
 #include <stdbool.h>
 
+
+#ifdef STM32F303xC
+#include "stm32f3xx.h"
+#elif STM32F103xB
+#include "stm32f1xx.h"
+#else
+#error MCU NOT DEFINED
+#endif
 /* macro for pwm data calculation */
 
 
@@ -30,8 +38,12 @@ typedef struct __attribute__((packed)) door_pwm_cal_data {
 }	door_pwm_cal_data_t;
 
 void door_servo_init_module(void);
-void pwm_manual(void);
+_Bool pwm_manual(uint32_t * pwm);
 ErrorStatus door_servo_calibrate(void);
+
+void door_servo_close_door(void);
+void door_servo_open_door(void);
+ErrorStatus door_servo_set_position(uint8_t pos);
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,10 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.15)
 
-project(reflow C ASM)
-ENABLE_LANGUAGE(ASM)
+project(reflow
+	VERSION 1.0
+	DESCRIPTION "Reflow oven controller"
+	LANGUAGES C ASM)
+enable_language(ASM)
 
 ## directories
 

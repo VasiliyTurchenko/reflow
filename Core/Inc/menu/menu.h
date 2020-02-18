@@ -23,12 +23,24 @@ extern "C" {
 #error MCU NOT DEFINED
 #endif
 
-
+/**
+	type of the menu item
+*/
+typedef enum {
+	MENU_ITEM_HEADER,	///< will be printed inverted. Don't scroll.
+	MENU_ITEM_INACTIVE,	///< will be printed as normal, but skipped
+				///< during navigation
+	MENU_ITEM_ACTIVE	///< normal item
+} menu_item_type_t;
 
 struct menu_item;
 
+/* function pointer */
 typedef const struct menu_item * (*action_fn)(const struct menu_item *);
 
+/**
+ *	@brief single menu item structure
+*/
 typedef	struct menu_item {
 	action_fn key_up_action;
 	action_fn key_dn_action;
@@ -42,9 +54,13 @@ typedef	struct menu_item {
 	const struct menu_item * const next;   /* next item at this level */
 	const struct menu_item * const prev;   /* prev item at this level */
 
+	menu_item_type_t item_type;
+
 } menu_item_t;
 
-
+/**
+ *	object used to draw menu
+ */
 typedef struct out_device {
 	/* pointer to the text output function */
 	uint32_t (*xfunc_print)(char *, uint8_t);

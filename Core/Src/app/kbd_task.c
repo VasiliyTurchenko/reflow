@@ -102,6 +102,25 @@ key_code_t get_key(void)
 }
 
 /**
+ * @brief wait_for_enter_or_esc
+ * @return true if enter, false if esc
+ */
+_Bool wait_for_enter_or_esc(void)
+{
+	clear_key_buffer();
+	key_code_t key;
+	while (true) {
+		key = get_key();
+		if ((key == ESC_KEY_RELEASED) || (key == ENTER_KEY_RELEASED)) {
+			break;
+		}
+		vTaskDelay(pdMS_TO_TICKS(10U));
+	}
+	return (key == ENTER_KEY_RELEASED) ? true : false;
+}
+
+
+/**
  * @brief wait_for_key
  * @param key_req
  * @return

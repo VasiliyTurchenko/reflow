@@ -244,7 +244,12 @@ void print_current_temperature(void)
 		zprint("\nPress ANY key\n to return\n", NORM);
 		sys_helpers_delay_ms(50U);
 
-		if (get_key() != NO_KEY) {
+		key_code_t k = get_key();
+		if ((k == ESC_KEY_RELEASED) || \
+		    (k == ENTER_KEY_RELEASED) || \
+		    (k == UP_KEY_RELEASED) ||\
+		    (k == DN_KEY_RELEASED)) {
+			clear_key_buffer();
 			break;
 		}
 	}

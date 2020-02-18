@@ -41,6 +41,7 @@ void clear_key_buffer(void);
 key_code_t get_key(void);
 
 _Bool wait_for_key(key_code_t key_req);
+_Bool wait_for_enter_or_esc(void);
 
 #if(false)
 uint8_t	get_up_key(void);

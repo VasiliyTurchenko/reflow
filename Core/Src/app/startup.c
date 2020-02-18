@@ -74,7 +74,7 @@ static void fb_fill_unfill(void)
 
 static void eeprom_crc32_check(void);
 
-static const char *id = "Reflow controller ";
+static const char *id = "Reflow controller";
 /**
  * @brief AppStartUp
  * @return
@@ -163,9 +163,21 @@ ErrorStatus AppStartUp(void)
 	/* some menu tests */
 	test_draw_menu_level();
 #endif
-	retVal = SUCCESS;
+#if(0)
+	/* some tests */
+	for (uint8_t i = 0U; i < 20U; i++) {
+		door_servo_set_position(i);
+		HAL_Delay(2000U);
+	}
+	for (uint8_t i = 20U; i != 0U; i--) {
+		door_servo_set_position(i - 1U);
+		HAL_Delay(2000U);
+	}
 
-fExit:
+#endif
+
+
+	retVal = SUCCESS;
 	return retVal;
 }
 

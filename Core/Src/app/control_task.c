@@ -60,8 +60,6 @@ static heater_runtime_info_t bottom_heater_runtime = { 0U, 0U };
 
 extern osThreadId control_taskHandle;
 
-static _Bool Bresenham_control(heater_runtime_info_t *heater);
-
 static void init_bresenham_runtime(bresenham_runtime_t *b, uint8_t set_point);
 
 static uint8_t top_heater_state = 0U;
@@ -121,120 +119,7 @@ void reset_controls(void)
 	bottom_heater_off();
 }
 
-#if (HEATER_CTRL_MODE == HEATER_CTRL_MODE_SERIAL)
-/**
- * @brief control_task_run
- */
-void control_task_run(void)
-{
-	uint32_t control_task_result = CONTROL_TASK_RES_OK;
-	/* wait for notification to start */
-	uint32_t notif_val = 0U;
-	if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &notif_val,
-			    pdMS_TO_TICKS(1000U)) != pdTRUE) {
-		/* nothing to do */
-		goto fExit;
-	}
-	xTaskNotifyStateClear(NULL);
 
-	if (notif_val != HEATER_START) {
-		/* bad command received */
-		i_am_alive(CONTROL_TASK_MAGIC);
-		control_task_result = CONTROL_TASK_RES_ERR_BAD_CMD;
-		/* nothing to do */
-		goto fExit_w_notify;
-	}
-
-	/* check values */
-	if ((control_task_setpoints.top_heater_setpoint > 100U) |
-	    (control_task_setpoints.bottom_heater_setpoint > 100U)) {
-		// error!
-		control_task_result = CONTROL_TASK_RES_ERR_BAD_SETTINGS;
-		goto fExit_w_notify;
-	}
-
-	if ((control_task_setpoints.mains_half_period > 12000U) /* 41.6 Hz */ ||
-	    (control_task_setpoints.mains_half_period < 7500U) /* 66.6 Hz*/) {
-		// error!
-		control_task_result = CONTROL_TASK_RES_ERR_BAD_SETTINGS;
-		goto fExit_w_notify;
-	}
-
-	/* settings are ok */
-	reset_controls();
-	working_top_heater_setpoint =
-		control_task_setpoints.top_heater_setpoint / 2U;
-	working_bottom_heater_setpoint =
-		control_task_setpoints.bottom_heater_setpoint / 2U;
-
-	/* enable exti notifications */
-
-	enable_exti_notifications();
-
-	do {
-		/* wait for exti notification */
-		uint32_t ulNotifiedValue = 0U;
-		BaseType_t notify_result;
-
-		notify_result =
-			xTaskNotifyWait(pdFALSE, ULONG_MAX, &ulNotifiedValue,
-					pdMS_TO_TICKS(MS_TO_WAIT_EXTI));
-		if (notify_result != pdPASS) {
-			/* EXTI did not arrived */
-			/* ERROR! */
-			top_heater_off();
-			bottom_heater_off();
-			control_task_result = CONTROL_TASK_RES_ERR_NO_EXTI;
-			break;
-		}
-
-		if (ulNotifiedValue != EXTI_ARRIVED) {
-			/* unknown notification addived */
-			top_heater_off();
-			bottom_heater_off();
-			control_task_result = CONTROL_TASK_RES_ERR_BAD_NOTIF;
-			//		HAL_GPIO_TogglePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin);
-
-			break;
-		}
-
-		/* exti occured */
-		if (working_top_heater_setpoint > half_period_number) {
-			top_heater_on();
-		} else {
-			top_heater_off();
-		}
-		if (working_bottom_heater_setpoint > half_period_number) {
-			bottom_heater_on();
-		} else {
-			bottom_heater_off();
-		}
-		/* wait 6 ms ON to ensure TRIAC goes on for this half-period */
-		vTaskDelay(pdMS_TO_TICKS(6U));
-
-		top_heater_off();
-		bottom_heater_off();
-		half_period_number++;
-	} while (half_period_number < 50U);
-
-fExit_w_notify:
-
-	/* disable exti notifications */
-	disable_exti_notifications();
-	xTaskNotifyStateClear(control_taskHandle);
-
-	/* notify temperature task about control cycle end */
-	if (xTaskNotify(ui_taskHandle, control_task_result,
-			eSetValueWithOverwrite) != pdPASS) {
-		// error
-	}
-
-fExit:
-	//i_am_alive(CONTROL_TASK_MAGIC);
-	return;
-}
-
-#elif (HEATER_CTRL_MODE == HEATER_CTRL_MODE_PARALLEL)
 
 static void init_bresenham_runtime(bresenham_runtime_t *b, uint8_t set_point)
 {
@@ -321,25 +206,7 @@ void control_task_run(void)
 	bottom_heater_runtime.working_heater_setpoint =
 		control_task_setpoints.bottom_heater_setpoint / 2U;
 
-/*
-	top_heater_runtime.working_heater_setpoint =
-		control_task_setpoints.top_heater_setpoint / 2U;
 
-	if (top_heater_runtime.working_heater_setpoint > 50U) {
-		top_heater_runtime.extra_top_setpoint =
-			top_heater_runtime.working_heater_setpoint - 50U;
-		top_heater_runtime.working_heater_setpoint = 50U;
-	}
-
-	bottom_heater_runtime.working_heater_setpoint =
-		control_task_setpoints.bottom_heater_setpoint / 2U;
-
-	if (bottom_heater_runtime.working_heater_setpoint > 50U) {
-		bottom_heater_runtime.extra_top_setpoint =
-			bottom_heater_runtime.working_heater_setpoint - 50U;
-		bottom_heater_runtime.working_heater_setpoint = 50U;
-	}
-*/
 	/* enable exti notifications */
 
 	enable_exti_notifications();
@@ -375,11 +242,8 @@ void control_task_run(void)
 
 			break;
 		}
-/*
-	100% of power = odd exti for top, even exti for bottom
-*/
-		/* exti occured */
 
+		/* exti occured */
 		if (top_heater_runtime.working_heater_setpoint > 0U) {
 		/* process top heater */
 
@@ -405,8 +269,6 @@ void control_task_run(void)
 			bresenham_step(&b_btm);
 		}
 
-//		xprintf("> %d, %d\n", half_period_number, top_heater_state);
-
 		/* wait 6 ms ON to ensure TRIAC goes on for this half-period */
 		vTaskDelay(pdMS_TO_TICKS(6U));
 
@@ -414,7 +276,6 @@ void control_task_run(void)
 		bottom_heater_off();
 		half_period_number++;
 	} while (half_period_number < 50U);
-//	xputs("\n");
 
 fExit_w_notify:
 
@@ -432,5 +293,3 @@ fExit:
 	//i_am_alive(CONTROL_TASK_MAGIC);
 	return;
 }
-
-#endif

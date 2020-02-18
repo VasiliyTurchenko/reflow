@@ -241,8 +241,10 @@ uint8_t InitSSD1303(SPI_HandleTypeDef *OLED_hspi)
 	WriteCmdSSD1303(OLED_hspi,
 			START_LINE_ADDRESS_CMD |
 				DISPLAY_START_LINE); //--set start line address
-	WriteCmdSSD1303(OLED_hspi, SET_AREA_COLOR_MODE); WriteCmdSSD1303(OLED_hspi, COL_MODE_LP(CM_MONO, NORM_PWR);
-	WriteCmdSSD1303(OLED_hspi, SET_BRIGHTNESS_CB); WriteCmdSSD1303(OLED_hspi, COL_BANK_BIRGHTNESS); //--set contrast control register
+	WriteCmdSSD1303(OLED_hspi, SET_AREA_COLOR_MODE);
+	WriteCmdSSD1303(OLED_hspi, COL_MODE_LP(CM_MONO, NORM_PWR);
+	WriteCmdSSD1303(OLED_hspi, SET_BRIGHTNESS_CB);
+	WriteCmdSSD1303(OLED_hspi, COL_BANK_BIRGHTNESS); //--set contrast control register
 //	WriteCmdSSD1303(OLED_hspi, SET_PAGE_ADDR_CMD | 0x00); //Set Page Start Address for Page Addressing Mode,0-7
 
 	WriteCmdSSD1303(OLED_hspi, SET_DISP_ON); //--turn on SSD1306 panel

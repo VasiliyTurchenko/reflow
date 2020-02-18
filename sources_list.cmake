@@ -64,6 +64,7 @@ set(GROUP_CORE_SRC_MENU
 
 set(GROUP_CORE_SRC_PROFILES
 	        Core/Src/profiles/profiles.c
+		Core/Src/profiles/regulator.c
 )
 
 

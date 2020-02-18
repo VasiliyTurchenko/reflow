@@ -21,15 +21,12 @@ extern "C" {
 struct profile_point;
 
 typedef struct __attribute__((packed)) profile_point {
+  const struct profile_point *prev; /* prev point in the profile */
   const struct profile_point *next; /* next point in the profile */
   uint16_t target_temperature;      /* we have to reach this value in Celsius */
-  uint16_t duration;                /* in the duration time , seconds */
-  char name[16];                    /* phase name incl. trailing \0 */
-
-  int8_t max_rate; /* maximal rise/fall rate in 0.1 C per sec
-		      25 means heating 2.5C/sec
-		      -54 mean cooling 5.4C/sec
-		   */
+  uint16_t min_duration;            /* minimum step duration time , seconds */
+  uint16_t max_duration;            /* maximum step duration time , seconds */
+  char name[9];                    /* phase name incl. trailing \0 */
 } profile_point_t;
 
 #define PROFILE_POINT_SIZE sizeof(profile_point_t)
@@ -46,7 +43,63 @@ typedef struct __attribute__((packed)) reflow_profile {
 extern const reflow_profile_t *const prof1;
 extern const reflow_profile_t *const prof2;
 
-void test_profiles_get_temp_for_time(void);
+
+/**
+ * @brief profiles_get_first_step
+ * @param running_profile
+ * @return
+ */
+static inline
+const profile_point_t * profiles_get_first_step(const reflow_profile_t *running_profile)
+{
+	const profile_point_t * retVal = NULL;
+	if (running_profile != NULL) {
+		retVal = running_profile->first;
+	}
+	return retVal;
+}
+
+/**
+ * @brief profiles_get_next_step
+ * @param running_profile_point
+ * @return
+ */
+static inline
+const profile_point_t * profiles_get_next_step(const profile_point_t *running_profile_point)
+{
+	const profile_point_t * retVal = NULL;
+	if (running_profile_point != NULL) {
+		retVal = running_profile_point->next;
+	}
+	return retVal;
+}
+
+/**
+ * @brief profiles_get_num_steps
+ * @param running_profile
+ * @return
+ */
+static inline
+size_t profiles_get_num_steps(const reflow_profile_t *running_profile)
+{
+	size_t retVal = 0U;
+	if (running_profile != NULL) {
+		const profile_point_t *curr_step = running_profile->first;
+		do {
+			retVal++;
+			curr_step = curr_step->next;
+		} while (curr_step != NULL);
+	}
+	return retVal;
+}
+
+uint16_t profiles_get_prof_length(const reflow_profile_t * running_profile);
+
+uint16_t profiles_get_temp_for_step_time(const profile_point_t *running_profile_point, uint16_t step_time);
+
+void profiles_set_room_temp(uint16_t rt);
+
+//void test_profiles_get_temp_for_time(void);
 
 #ifdef __cplusplus
 }
