@@ -8,88 +8,6 @@
 
 #include "regulator.h"
 
-static const uint8_t s10[305] = {
-
-	/*0...59s*/
-	100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
-	100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
-	100, 100,
-	/*30*/
-	100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 80, 80, 80, 80, 80,
-	50, 50, 50, 50, 50, 20, 20, 20, 20, 20, 00, 00, 00, 00, 00,
-
-	/*60...119s*/
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0,
-	/*90*/
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0,
-
-	/*140...179s*/
-	40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
-	40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
-	/*150*/
-	40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 100, 100, 100, 100, 100, 100,
-	100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
-
-	/* 180...239s*/
-	100, 100, 100, 100, 100, 00, 00, 00, 00, 00, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
-	/*210 */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 00, 00, 00, 00,
-	00, 00, 00, 00, 00, 00, 00,
-
-	/*240...305s*/
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
-/**
- * @brief get_heater_throttle
- * @param t_actual
- * @param t_set
- * @param time
- * @return
- */
-uint8_t get_heater_throttle(uint16_t t_actual, uint16_t time)
-{
-	uint8_t retVal = 0U;
-	static uint16_t last_time = 0U;
-	if (t_actual < 120U) {
-		retVal = 100U;
-		last_time = time;
-		goto fExit;
-	}
-	uint16_t elapsed = time - last_time;
-
-	if ((elapsed > 30U) && (elapsed < 45U)) {
-		retVal = 40U;
-		goto fExit;
-	}
-
-	if (elapsed < 105U) {
-		retVal = 0U;
-		goto fExit;
-	}
-
-	if (elapsed < 110U) {
-		retVal = 100U;
-		goto fExit;
-	}
-	if (elapsed < 180U) {
-		retVal = 100U;
-		goto fExit;
-	}
-	if (elapsed < 190U) {
-		retVal = 20U;
-		goto fExit;
-	}
-
-fExit:
-	return retVal;
-}
-
 typedef struct oven_profile {
 	int32_t pid_p;		///< proportional coeff
 	int32_t pid_i;		///< integral coeff
@@ -97,7 +15,7 @@ typedef struct oven_profile {
 	int32_t sustained_temp; ///< sustained temperature at 100% power
 	int32_t tau_s;		///< time constant
 	int32_t max_throttle;   ///< max throttle value
-	int32_t min_throttle;	///< minimal throttle value
+	int32_t min_throttle;   ///< minimal throttle value
 
 } oven_profile_t;
 
@@ -132,7 +50,7 @@ static int16_t approx_throttle(int16_t target)
  * @param high
  * @return
  */
-static /*inline*/ int32_t CLAMP(int32_t a, int32_t low, int32_t high)
+static inline int32_t CLAMP(int32_t a, int32_t low, int32_t high)
 {
 	if (a < low) {
 		a = low;
@@ -188,6 +106,7 @@ int8_t pid(uint16_t target, uint16_t temp)
 			result = result / 10;
 		}
 		unclamped_result = result;
-		return (int8_t)(CLAMP(result, profile.min_throttle, profile.max_throttle));
+		return (int8_t)(CLAMP(result, profile.min_throttle,
+				      profile.max_throttle));
 	}
 }

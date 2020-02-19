@@ -19,7 +19,6 @@ extern "C" {
 
 #include "control_task.h"
 
-uint8_t get_heater_throttle(uint16_t t_actual, uint16_t time);
 int8_t pid(uint16_t target, uint16_t temp);
 
 #ifdef __cplusplus

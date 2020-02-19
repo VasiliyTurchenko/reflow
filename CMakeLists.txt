@@ -6,6 +6,8 @@ project(reflow
 	LANGUAGES C ASM)
 enable_language(ASM)
 
+if (CMAKE_SYSTEM_NAME MATCHES Generic)
+
 ## directories
 
 set(STARTUP_CODE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -128,10 +130,20 @@ message(STATUS "185: CMAKE_C_FLAGS = " ${CMAKE_CXX_FLAGS})
 #ADD_MAPFILE(${BOARD})
 #message("MAPFILENAME = " ${MAPFILENAME})
 
+else()
+MESSAGE("Non-MCU target detected")
+add_executable( i386 Core386/Src/main.c )
+
+
+endif()
 
 MESSAGE("*********************")
 message("CMAKE_SYSTEM_NAME = " ${CMAKE_SYSTEM_NAME} "      CMAKE_HOST_SYSTEM_NAME = " ${CMAKE_HOST_SYSTEM_NAME})
 message("CMAKE_SYSTEM = " ${CMAKE_SYSTEM} "      CMAKE_HOST_SYSTEM = " ${CMAKE_HOST_SYSTEM})
 MESSAGE("CMAKE_C_COMPILER = " ${CMAKE_C_COMPILER})
 MESSAGE("CMAKE_BUILD_TYPE = " ${CMAKE_BUILD_TYPE})
+get_cmake_property(EL ENABLED_LANGUAGES)
+message ("ENABLED_LANGUAGES = " ${EL})
+get_cmake_property(LL LINKER_LANGUAGE)
+message ("LINKER_LANGUAGE = " ${LL})
 MESSAGE("*********************")

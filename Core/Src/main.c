@@ -132,7 +132,6 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_Base_Start_IT(&htim3);
 
-
 	if (AppStartUp() != SUCCESS) {
 		NVIC_SystemReset();
 	}
@@ -153,9 +152,9 @@ int main(void)
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
-	/* USER CODE END WHILE */
+		/* USER CODE END WHILE */
 
-	/* USER CODE BEGIN 3 */
+		/* USER CODE BEGIN 3 */
 	}
 	/* USER CODE END 3 */
 }
@@ -166,49 +165,50 @@ int main(void)
   */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+	RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
 
-  /** Initializes the CPU, AHB and APB busses clocks
+	/** Initializes the CPU, AHB and APB busses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Initializes the CPU, AHB and APB busses clocks
+	RCC_OscInitStruct.OscillatorType =
+		RCC_OSCILLATORTYPE_LSI | RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+	RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+	RCC_OscInitStruct.LSIState = RCC_LSI_ON;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+		Error_Handler();
+	}
+	/** Initializes the CPU, AHB and APB busses clocks
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-			      |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK |
+				      RCC_CLOCKTYPE_SYSCLK |
+				      RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_ADC;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Enables the Clock Security System
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) !=
+	    HAL_OK) {
+		Error_Handler();
+	}
+	PeriphClkInit.PeriphClockSelection =
+		RCC_PERIPHCLK_RTC | RCC_PERIPHCLK_ADC;
+	PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+	PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
+	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
+		Error_Handler();
+	}
+	/** Enables the Clock Security System
   */
-  HAL_RCC_EnableCSS();
+	HAL_RCC_EnableCSS();
 }
-#if(0)
+#if (0)
 void SystemClock_Config(void)
 {
 	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
@@ -319,17 +319,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 	/* USER CODE BEGIN Callback 1 */
 	if (htim->Instance == TIM1) {
-
-	/* increment us counter */
-	/* add 1000 us */
-	counter_1us += 1000U;
-
+		/* increment us counter */
+		/* add 1000 us */
+		counter_1us += 1000U;
 
 #ifdef USE_FRAMEBUFFER
 		if ((HAL_GetTick() % 64U) == 0U) {
 			if (context1->pDevFB->fUpdateScreen != NULL) {
-				context1->pDevFB->fUpdateScreen(&hspi2,
-								context1->pDevFB);
+				context1->pDevFB->fUpdateScreen(
+					&hspi2, context1->pDevFB);
 			}
 		}
 #endif
@@ -344,19 +342,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			}
 		}
 	}
-#if(0)
+#if (0)
 	if (htim->Instance == TIM3) {
 		HAL_GPIO_TogglePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin);
 		if ((HAL_GetTick() & 0x01U) == 0U) {
-
 			BaseType_t xHigherPriorityTaskWoken;
-			if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+			if (xTaskGetSchedulerState() !=
+			    taskSCHEDULER_NOT_STARTED) {
 				extern osThreadId kbd_taskHandle;
-				if (xTaskNotifyFromISR(kbd_taskHandle, 1U,
-						       eSetValueWithOverwrite,
-						       &xHigherPriorityTaskWoken) !=
+				if (xTaskNotifyFromISR(
+					    kbd_taskHandle, 1U,
+					    eSetValueWithOverwrite,
+					    &xHigherPriorityTaskWoken) !=
 				    pdPASS) {
-				// error
+					// error
 				}
 				portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 			}
