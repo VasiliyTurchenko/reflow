@@ -14,7 +14,7 @@
 #include "logging.h"
 
 /* **************** first profile **********************************/
-/* https://www.compuphase.com/electronics/reflowsolderprofiles.htm */
+/* https:/ /www.compuphase.com/electronics/reflowsolderprofiles.htm */
 /* Lead (Sn63 Pb37) */
 static const profile_point_t Sn63Pb37_pre_heat;
 static const profile_point_t Sn63Pb37_soak;
@@ -28,7 +28,7 @@ static const profile_point_t Sn63Pb37_pre_heat = {
 	.target_temperature = 150U,
 	.min_duration = 60U,
 	.max_duration = 90U,
-	.name = { "Pre-heat\0" },
+	.name = { "Pre-heat" },
 };
 
 static const profile_point_t Sn63Pb37_soak = {
@@ -37,7 +37,7 @@ static const profile_point_t Sn63Pb37_soak = {
 	.target_temperature = 165U,
 	.min_duration = 120U,
 	.max_duration = 130U,
-	.name = { "Soak\0" },
+	.name = { "Soak" },
 };
 
 static const profile_point_t Sn63Pb37_ramp_up = {
@@ -46,7 +46,7 @@ static const profile_point_t Sn63Pb37_ramp_up = {
 	.target_temperature = 230U,
 	.min_duration = 45U,
 	.max_duration = 55U,
-	.name = { "Ramp-Up\0" },
+	.name = { "Ramp-Up" },
 };
 
 static const profile_point_t Sn63Pb37_reflow = {
@@ -55,7 +55,7 @@ static const profile_point_t Sn63Pb37_reflow = {
 	.target_temperature = 230U,
 	.min_duration = 20U,
 	.max_duration = 21U,
-	.name = { "Reflow\0" },
+	.name = { "Reflow" },
 };
 
 static const profile_point_t Sn63Pb37_cool_down = {
@@ -64,17 +64,17 @@ static const profile_point_t Sn63Pb37_cool_down = {
 	.target_temperature = 30U,
 	.min_duration = 60U,
 	.max_duration = 100U,
-	.name = { "CoolDown\0" },
+	.name = { "CoolDown" },
 
 };
 
 static const reflow_profile_t Sn63Pb37 = {
-	.name = { "Sn63Pb37        \0" },
+	.name = { "Sn63Pb37        " },
 	.first = &Sn63Pb37_pre_heat,
 };
 
 /***************** second profile **********************************/
-/* https://www.compuphase.com/electronics/reflowsolderprofiles.htm */
+/* https:/ /www.compuphase.com/electronics/reflowsolderprofiles.htm */
 /* Lead-free (SAC305) */
 static const profile_point_t SAC305_pre_heat;
 static const profile_point_t SAC305_soak;
@@ -88,7 +88,7 @@ static const profile_point_t SAC305_pre_heat = {
 	.target_temperature = 150U,
 	.min_duration = 60U,
 	.max_duration = 90U,
-	.name = { "Pre-heat\0" },
+	.name = { "Pre-heat" },
 };
 
 static const profile_point_t SAC305_soak = {
@@ -97,7 +97,7 @@ static const profile_point_t SAC305_soak = {
 	.target_temperature = 180U,
 	.min_duration = 120U,
 	.max_duration = 130U,
-	.name = { "Soak\0" },
+	.name = { "Soak" },
 };
 
 static const profile_point_t SAC305_ramp_up = {
@@ -106,7 +106,7 @@ static const profile_point_t SAC305_ramp_up = {
 	.target_temperature = 245U,
 	.min_duration = 45U,
 	.max_duration = 45U,
-	.name = { "Ramp-Up\0" },
+	.name = { "Ramp-Up" },
 };
 
 static const profile_point_t SAC305_reflow = {
@@ -115,7 +115,7 @@ static const profile_point_t SAC305_reflow = {
 	.target_temperature = 245U,
 	.min_duration = 15U,
 	.max_duration = 16U,
-	.name = { "Reflow\0" },
+	.name = { "Reflow" },
 };
 
 static const profile_point_t SAC305_cool_down = {
@@ -124,11 +124,11 @@ static const profile_point_t SAC305_cool_down = {
 	.target_temperature = 30U,
 	.min_duration = 60U,
 	.max_duration = 100U,
-	.name = { "CoolDown\0" },
+	.name = { "CoolDown" },
 };
 
 static const reflow_profile_t SAC305 = {
-	.name = { "SAC305          \0" },
+	.name = { "SAC305          " },
 	.first = &SAC305_pre_heat,
 };
 
@@ -179,7 +179,7 @@ uint16_t profiles_get_temp_for_step_time(const profile_point_t *running_profile_
 {
 	int32_t retVal = 0;
 	if ((running_profile_point != NULL) && (step_time < running_profile_point->min_duration)) {
-		int32_t step_start_temp = room_temp; ////< room temp for the first step
+		int32_t step_start_temp = (int32_t)room_temp; ////< room temp for the first step
 		if (running_profile_point->prev != NULL) {
 			step_start_temp = (int32_t)running_profile_point->prev->target_temperature;
 		}
@@ -188,7 +188,10 @@ uint16_t profiles_get_temp_for_step_time(const profile_point_t *running_profile_
 		float rate = (float)step_end_temp - (float)step_start_temp;
 		rate = rate / (float)running_profile_point->min_duration;
 
-		retVal = (int32_t)((float)step_time * rate) + step_start_temp;
+		float fretVal = (float)step_time * rate;
+		fretVal += (float)step_start_temp;
+
+		retVal = (int32_t)fretVal;
 		retVal = (retVal < 0) ? 0 : retVal;		///< clamp
 		retVal = (retVal > 500) ? 0 : retVal;		///< clamp again
 	}

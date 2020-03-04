@@ -40,7 +40,7 @@
 extern osThreadId ui_taskHandle;
 extern osThreadId control_taskHandle;
 
-extern int32_t unclamped_result;
+//extern int32_t unclamped_result;
 /**
  * @brief ui_task_init
  */
@@ -57,7 +57,7 @@ void ui_task_init(void)
 static void print_top_set(uint16_t t)
 {
 	gotoXY(0, 32);
-	zprint("\nTset:\0", NORM);
+	zprint("\nTset:", NORM);
 
 	uint8_t buf[6] = { 0 };
 	uint16_to_asciiz(t, (char *)buf);
@@ -239,13 +239,15 @@ void manual_heater_control(void)
 
 			/* temp graph */
 			static uint32_t elapsed = 0U;
-			if (HAL_GetTick() - elapsed >= 1000U) {
+			if ( (HAL_GetTick() - elapsed) >= 1000U ) {
 				elapsed = HAL_GetTick();
 				proc_time++;
 				xprintf("%d, %d, %d, %d, %d\n", proc_time,
 					temp_setpoint, temperature, throttle,
 					unclamped_result);
 			}
+		} else {
+		//
 		}
 	}
 }
@@ -357,7 +359,7 @@ void start_reflow(uint8_t np)
 	*/
 	uint16_t extra_time = 0U;
 
-	int8_t throttle = 0U; ///< main control value
+	int8_t throttle = 0; ///< main control value
 
 	uint16_t prev_proc_time = 0U;     ///< not only for logging
 	uint16_t total_process_time = 0U; ///< elapsed time for entrie process

@@ -28,7 +28,7 @@ void comm_task_init(void)
  */
 void comm_task_run(void)
 {
-	Transmit_RTOS(NULL);
+	(void)Transmit_RTOS(NULL);
 //	i_am_alive(COMM_TASK_MAGIC);
-	vTaskDelay(pdMS_TO_TICKS(COMM_TASK_PERIOD));
+	vTaskDelay(pdMS_TO_TICKS(Comm_Task_Period()));
 }

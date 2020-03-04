@@ -97,7 +97,7 @@ int main(void)
 	/* MCU Configuration--------------------------------------------------------*/
 
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	HAL_Init();
+	(void)HAL_Init();
 
 	/* USER CODE BEGIN Init */
 
@@ -129,8 +129,8 @@ int main(void)
 	MX_RTC_Init();
 	/* USER CODE BEGIN 2 */
 
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-	HAL_TIM_Base_Start_IT(&htim3);
+	(void)HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+	(void)HAL_TIM_Base_Start_IT(&htim3);
 
 	if (AppStartUp() != SUCCESS) {
 		NVIC_SystemReset();
@@ -145,13 +145,13 @@ int main(void)
 	MX_FREERTOS_Init();
 
 	/* Start scheduler */
-	osKernelStart();
+	(void)osKernelStart();
 
 	/* We should never get here as control is now taken by the scheduler */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
-	while (1) {
+	while (true) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
@@ -281,7 +281,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 		SPI2_TxCplt_flag = 1U;
 #ifdef USE_FRAMEBUFFER
 		extern struct_Context *context1;
-		CompleteUpdateSSD1306_callback(hspi, context1->pDevFB);
+		(void)CompleteUpdateSSD1306_callback(hspi, context1->pDevFB);
 #endif
 	}
 }
@@ -337,8 +337,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	if (htim->Instance == TIM1) {
 		if (Transmit_non_RTOS) {
 			/* every millisecond */
-			if (TransmitFuncRunning == false) {
-				Transmit(NULL);
+			if (TransmitFuncRunning) {
+				(void)Transmit(NULL);
 			}
 		}
 	}
@@ -393,5 +393,7 @@ void assert_failed(uint8_t *file, uint32_t line)
 	/* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
+//void __register_exitproc(void) { }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

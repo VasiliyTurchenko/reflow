@@ -18,7 +18,7 @@
 #ifdef USE_FRAMEBUFFER
 
 #include <string.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 

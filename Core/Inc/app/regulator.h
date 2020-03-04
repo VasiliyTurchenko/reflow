@@ -20,6 +20,7 @@ extern "C" {
 #include "control_task.h"
 
 int8_t pid(uint16_t target, uint16_t temp);
+extern int32_t unclamped_result;
 
 #ifdef __cplusplus
 }

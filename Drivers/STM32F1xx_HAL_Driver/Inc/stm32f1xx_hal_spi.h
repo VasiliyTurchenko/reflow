@@ -42,7 +42,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f1xx_hal_def.h"  
+#include "stm32f1xx_hal_def.h"
 
 /** @addtogroup STM32F1xx_HAL_Driver
   * @{
@@ -63,41 +63,41 @@
 typedef struct
 {
   uint32_t Mode;               /*!< Specifies the SPI operating mode.
-                                    This parameter can be a value of @ref SPI_Mode */
+				    This parameter can be a value of @ref SPI_Mode */
 
   uint32_t Direction;          /*!< Specifies the SPI Directional mode state.
-                                    This parameter can be a value of @ref SPI_Direction */
+				    This parameter can be a value of @ref SPI_Direction */
 
   uint32_t DataSize;           /*!< Specifies the SPI data size.
-                                    This parameter can be a value of @ref SPI_Data_Size */
+				    This parameter can be a value of @ref SPI_Data_Size */
 
   uint32_t CLKPolarity;        /*!< Specifies the serial clock steady state.
-                                    This parameter can be a value of @ref SPI_Clock_Polarity */
+				    This parameter can be a value of @ref SPI_Clock_Polarity */
 
   uint32_t CLKPhase;           /*!< Specifies the clock active edge for the bit capture.
-                                    This parameter can be a value of @ref SPI_Clock_Phase */
+				    This parameter can be a value of @ref SPI_Clock_Phase */
 
   uint32_t NSS;                /*!< Specifies whether the NSS signal is managed by
-                                    hardware (NSS pin) or by software using the SSI bit.
-                                    This parameter can be a value of @ref SPI_Slave_Select_management */
+				    hardware (NSS pin) or by software using the SSI bit.
+				    This parameter can be a value of @ref SPI_Slave_Select_management */
 
   uint32_t BaudRatePrescaler;  /*!< Specifies the Baud Rate prescaler value which will be
-                                    used to configure the transmit and receive SCK clock.
-                                    This parameter can be a value of @ref SPI_BaudRate_Prescaler
-                                    @note The communication clock is derived from the master
-                                     clock. The slave clock does not need to be set. */
+				    used to configure the transmit and receive SCK clock.
+				    This parameter can be a value of @ref SPI_BaudRate_Prescaler
+				    @note The communication clock is derived from the master
+				     clock. The slave clock does not need to be set. */
 
   uint32_t FirstBit;           /*!< Specifies whether data transfers start from MSB or LSB bit.
-                                    This parameter can be a value of @ref SPI_MSB_LSB_transmission */
+				    This parameter can be a value of @ref SPI_MSB_LSB_transmission */
 
   uint32_t TIMode;             /*!< Specifies if the TI mode is enabled or not.
-                                    This parameter can be a value of @ref SPI_TI_mode */
+				    This parameter can be a value of @ref SPI_TI_mode */
 
   uint32_t CRCCalculation;     /*!< Specifies if the CRC calculation is enabled or not.
-                                    This parameter can be a value of @ref SPI_CRC_Calculation */
+				    This parameter can be a value of @ref SPI_CRC_Calculation */
 
   uint32_t CRCPolynomial;      /*!< Specifies the polynomial used for the CRC calculation.
-                                    This parameter must be a number between Min_Data = 0 and Max_Data = 65535 */
+				    This parameter must be a number between Min_Data = 0 and Max_Data = 65535 */
 }SPI_InitTypeDef;
 
 /**
@@ -513,47 +513,47 @@ uint32_t             HAL_SPI_GetError(SPI_HandleTypeDef *hspi);
   * @retval None
   */
 #define SPI_RESET_CRC(__HANDLE__) do{(__HANDLE__)->Instance->CR1 &= (uint16_t)(~SPI_CR1_CRCEN);\
-                                     (__HANDLE__)->Instance->CR1 |= SPI_CR1_CRCEN;}while(0U)
+				     (__HANDLE__)->Instance->CR1 |= SPI_CR1_CRCEN;}while(0U)
 
 #define IS_SPI_MODE(MODE) (((MODE) == SPI_MODE_SLAVE) || \
-                           ((MODE) == SPI_MODE_MASTER))
+			   ((MODE) == SPI_MODE_MASTER))
 
 #define IS_SPI_DIRECTION(MODE) (((MODE) == SPI_DIRECTION_2LINES)        || \
-                                ((MODE) == SPI_DIRECTION_2LINES_RXONLY) || \
-                                ((MODE) == SPI_DIRECTION_1LINE))
+				((MODE) == SPI_DIRECTION_2LINES_RXONLY) || \
+				((MODE) == SPI_DIRECTION_1LINE))
 
 #define IS_SPI_DIRECTION_2LINES(MODE) ((MODE) == SPI_DIRECTION_2LINES)
 
 #define IS_SPI_DIRECTION_2LINES_OR_1LINE(MODE) (((MODE) == SPI_DIRECTION_2LINES)  || \
-                                                ((MODE) == SPI_DIRECTION_1LINE))
+						((MODE) == SPI_DIRECTION_1LINE))
 
 #define IS_SPI_DATASIZE(DATASIZE) (((DATASIZE) == SPI_DATASIZE_16BIT) || \
-                                   ((DATASIZE) == SPI_DATASIZE_8BIT))
+				   ((DATASIZE) == SPI_DATASIZE_8BIT))
 
 #define IS_SPI_CPOL(CPOL) (((CPOL) == SPI_POLARITY_LOW) || \
-                           ((CPOL) == SPI_POLARITY_HIGH))
+			   ((CPOL) == SPI_POLARITY_HIGH))
 
 #define IS_SPI_CPHA(CPHA) (((CPHA) == SPI_PHASE_1EDGE) || \
-                           ((CPHA) == SPI_PHASE_2EDGE))
+			   ((CPHA) == SPI_PHASE_2EDGE))
 
 #define IS_SPI_NSS(NSS) (((NSS) == SPI_NSS_SOFT)       || \
-                         ((NSS) == SPI_NSS_HARD_INPUT) || \
-                         ((NSS) == SPI_NSS_HARD_OUTPUT))
+			 ((NSS) == SPI_NSS_HARD_INPUT) || \
+			 ((NSS) == SPI_NSS_HARD_OUTPUT))
 
 #define IS_SPI_BAUDRATE_PRESCALER(PRESCALER) (((PRESCALER) == SPI_BAUDRATEPRESCALER_2)   || \
-                                              ((PRESCALER) == SPI_BAUDRATEPRESCALER_4)   || \
-                                              ((PRESCALER) == SPI_BAUDRATEPRESCALER_8)   || \
-                                              ((PRESCALER) == SPI_BAUDRATEPRESCALER_16)  || \
-                                              ((PRESCALER) == SPI_BAUDRATEPRESCALER_32)  || \
-                                              ((PRESCALER) == SPI_BAUDRATEPRESCALER_64)  || \
-                                              ((PRESCALER) == SPI_BAUDRATEPRESCALER_128) || \
-                                              ((PRESCALER) == SPI_BAUDRATEPRESCALER_256))
+					      ((PRESCALER) == SPI_BAUDRATEPRESCALER_4)   || \
+					      ((PRESCALER) == SPI_BAUDRATEPRESCALER_8)   || \
+					      ((PRESCALER) == SPI_BAUDRATEPRESCALER_16)  || \
+					      ((PRESCALER) == SPI_BAUDRATEPRESCALER_32)  || \
+					      ((PRESCALER) == SPI_BAUDRATEPRESCALER_64)  || \
+					      ((PRESCALER) == SPI_BAUDRATEPRESCALER_128) || \
+					      ((PRESCALER) == SPI_BAUDRATEPRESCALER_256))
 
 #define IS_SPI_FIRST_BIT(BIT) (((BIT) == SPI_FIRSTBIT_MSB) || \
-                               ((BIT) == SPI_FIRSTBIT_LSB))
+			       ((BIT) == SPI_FIRSTBIT_LSB))
 
 #define IS_SPI_CRC_CALCULATION(CALCULATION) (((CALCULATION) == SPI_CRCCALCULATION_DISABLE) || \
-                                             ((CALCULATION) == SPI_CRCCALCULATION_ENABLE))
+					     ((CALCULATION) == SPI_CRCCALCULATION_ENABLE))
 
 #define IS_SPI_CRC_POLYNOMIAL(POLYNOMIAL) (((POLYNOMIAL) >= 0x01U) && ((POLYNOMIAL) <= 0xFFFFU))
 

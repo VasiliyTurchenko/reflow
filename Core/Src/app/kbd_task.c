@@ -145,7 +145,10 @@ void kbd_task_init(void)
 	register_magic(KBD_TASK_MAGIC);
 	//	i_am_alive(KBD_TASK_MAGIC);
 	log_xputs(MSG_LEVEL_INFO, " started.");
-	keys_mask = key_up_mask | key_dn_mask | key_enter_mask | key_esc_mask;
+	keys_mask = key_up_mask;
+	keys_mask |= key_dn_mask;
+	keys_mask |= key_enter_mask;
+	keys_mask |= key_esc_mask;
 }
 
 /**

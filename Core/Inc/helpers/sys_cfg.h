@@ -17,13 +17,13 @@
 /**
  * @brief	USART config
  */
-#define USART_SPEED 115200U /* baudrate */
+#define USART_SPEED (115200U) /* baudrate */
 
 /*
-                        Packet size
-                        
+			Packet size
+
 USART Speed
-                64	128	256	512	1024	2048
+		64	128	256	512	1024	2048
 115200	11520	5,6	11,1	22,2	44,4	88,9	177,8
 57600	5760	11,1	22,2	44,4	88,9	177,8	355,6
 38400	3840	16,7	33,3	66,7	133,3	266,7	533,3
@@ -36,12 +36,20 @@ USART Speed
 */
 
 /* buffer size in bytes (there's two of them)*/
-#define USART_TX_BUFSIZE 512U
+#define USART_TX_BUFSIZE (512U)
 
 /* time to transmit the full buffer */
 #define BUF_TX_TIME                                                            \
-  ((uint32_t)(1U / (1000U * ((USART_SPEED / 10U) / USART_TX_BUFSIZE))))
+  ((uint32_t)(1000U / ((USART_SPEED / 10U) / USART_TX_BUFSIZE)))
 #define COMM_TASK_PERIOD (BUF_TX_TIME + 1U)
+
+static inline uint32_t Comm_Task_Period(void)
+{
+	uint32_t retVal = (USART_SPEED / 10U) / USART_TX_BUFSIZE;
+	retVal = (1000U / retVal) + 1U;
+	return retVal;
+}
+
 
 #endif
 /* ################### E.O.F. ############################################### */

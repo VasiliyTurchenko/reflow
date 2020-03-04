@@ -25,7 +25,7 @@ static const uint32_t crc32_offset = (EEPROM_SIZE - sizeof(uint32_t));
  */
 ErrorStatus load_cfg_pool(void)
 {
-	ErrorStatus retVal = ERROR;
+	ErrorStatus retVal;
 
 	retVal = Read_Array_I2C_EEPROM((uint8_t *)&cfg_pool,
 				       sizeof(EEPROM_pool_t), pool_offset,
@@ -44,7 +44,6 @@ ErrorStatus load_cfg_pool(void)
 ErrorStatus save_cfg_pool(void)
 {
 	ErrorStatus retVal;
-	retVal = ERROR;
 
 	retVal = Write_Array_I2C_EEPROM((uint8_t *)&cfg_pool,
 					sizeof(EEPROM_pool_t), pool_offset,
@@ -59,7 +58,7 @@ ErrorStatus save_cfg_pool(void)
 	}
 
 	if (retVal == SUCCESS) {
-		fast_clear_screen();
+		RESULT_UNUSED(fast_clear_screen());
 		log_xputs(MSG_LEVEL_SERIOUS, "Config saved. Rebooting.");
 		sys_helpers_delay_ms_and_reboot(500U);
 	}
@@ -96,6 +95,7 @@ void *get_cfg(CFG_TYPE requested_cfg)
 		retVal = (void *)&cfg_pool.cooling_cal_data;
 		break;
 	}
+	case CFG_TYPE_NONE:
 	default: {
 		break;
 	}

@@ -31,7 +31,7 @@ static _Bool inc_open = false; ///< true if open requires inc CCR
  */
 void door_servo_init_module(void)
 {
-	door_pwm_cal = get_cfg(CFG_TYPE_DOOR_PWM);
+	door_pwm_cal = (door_pwm_cal_data_t *)get_cfg(CFG_TYPE_DOOR_PWM);
 	if (!door_pwm_cal->valid) {
 		door_pwm_cal->open_PWM = 0U;
 		door_pwm_cal->closed_PWM = 0U;
@@ -39,7 +39,7 @@ void door_servo_init_module(void)
 		int32_t op_pwm = (int32_t)((door_pwm_cal->open_PWM) & 0xFFFFU);
 		int32_t cl_pwm =
 			(int32_t)((door_pwm_cal->closed_PWM) & 0xFFFFU);
-		int32_t step = 0U;
+		int32_t step = 0;
 		/* positive step means we need increment CCR to open */
 		step = (op_pwm - cl_pwm) / (N_POS - 1);
 		if (step > 0) {
@@ -143,7 +143,7 @@ ErrorStatus door_servo_calibrate(void)
 
 	fast_clear_screen();
 	gotoXY(0U, 8U);
-	char *use_up_dn = "Use Up and Down\n";
+	const char *use_up_dn = "Use Up and Down\n";
 	zprint(use_up_dn, NORM);
 	zprint("to open the door", NORM);
 	zprint("Press ENTER when", NORM);
@@ -206,7 +206,7 @@ static inline void pwm_change(int32_t ch)
 	}
 	int32_t start_pwm = (int32_t)htim2.Instance->CCR1;
 	int32_t stop_pwm = start_pwm + ch;
-	int32_t inc = (stop_pwm >= start_pwm) ? 1 : -1;
+	int32_t inc = (stop_pwm >= start_pwm) ? (int32_t)1 : -1;
 
 	while (start_pwm != stop_pwm) {
 		start_pwm += inc;
@@ -229,7 +229,7 @@ ErrorStatus door_servo_set_position(uint8_t pos)
 	int32_t curr_pwm = (int32_t)htim2.Instance->CCR1;
 	int32_t target_pwm = 0;
 
-	pos = (pos < N_POS) ? pos : (N_POS - 1);
+	pos = (pos < (uint8_t)N_POS) ? pos : (uint8_t)(N_POS - 1);
 	/* it is safe to convert u16 to i32 */
 	target_pwm = (int32_t)door_position[pos];
 
@@ -245,7 +245,7 @@ fExit:
  */
 void door_servo_open_door(void)
 {
-	door_servo_set_position(N_POS - 1);
+	door_servo_set_position((uint8_t)(N_POS - 1));
 }
 
 /**
@@ -253,5 +253,5 @@ void door_servo_open_door(void)
  */
 void door_servo_close_door(void)
 {
-	door_servo_set_position(0);
+	door_servo_set_position(0U);
 }

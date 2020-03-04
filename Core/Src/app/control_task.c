@@ -126,11 +126,11 @@ static void init_bresenham_runtime(bresenham_runtime_t *b, uint8_t set_point)
 	b->x0 = 0;
 	b->x1 = 49;
 	b->y0 = 0;
-	b->y1 = set_point - 1;
+	b->y1 = (int)set_point - 1;
 	b->e2 = 0;
 	b->dx = b->x1 - b->x0;
 	b->dy = b->y1 - b->y0;
-	b->err = ( b->dx > b->dy ? b->dx : -b->dy ) / 2;
+	b->err = ( (b->dx > b->dy) ? b->dx : -b->dy ) / 2;
 	b->prev_y0 = -1;
 	b->sy = (b->y0 < b->y1) ? 1 : -1;
 }

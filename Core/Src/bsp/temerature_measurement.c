@@ -29,7 +29,7 @@ static tc_cal_data_t *tc2_cal_data = NULL;
  * even indexes are for channel 1 samples
 */
 static const size_t DMA_arr_size = ADC_CHANNEL_ARRAY_SIZE * ADC_NUM_CHANNELS;
-uint16_t samples[ADC_NUM_CHANNELS * ADC_CHANNEL_ARRAY_SIZE] __aligned(4);
+static uint16_t samples[ADC_NUM_CHANNELS * ADC_CHANNEL_ARRAY_SIZE] __aligned(4);
 
 /**
  * @brief get_average_adc_meas
@@ -43,8 +43,8 @@ averaged_data_t get_average_adc_meas(void)
 	size_t i = 0U;
 	while (i < DMA_arr_size) {
 		data0 += samples[i];
-		data1 += samples[i + 1];
-		i += 2U;
+		data1 += samples[i + 1U];
+		i += ADC_NUM_CHANNELS;
 	}
 
 	retVal.average_val0 = (uint16_t)(data0 / ADC_CHANNEL_ARRAY_SIZE);
@@ -100,8 +100,8 @@ ErrorStatus start_ADC(void)
 	    HAL_OK) {
 		retVal = SUCCESS;
 	}
-	tc1_cal_data = get_cfg(CFG_TYPE_TC_CAL1);
-	tc2_cal_data = get_cfg(CFG_TYPE_TC_CAL2);
+	tc1_cal_data = (tc_cal_data_t*)get_cfg(CFG_TYPE_TC_CAL1);
+	tc2_cal_data = (tc_cal_data_t*)get_cfg(CFG_TYPE_TC_CAL2);
 
 	return retVal;
 }
@@ -114,20 +114,20 @@ ErrorStatus start_ADC(void)
 static ErrorStatus calibrate_TC(tc_cal_data_t *p_tc)
 {
 	ErrorStatus retVal = ERROR;
-	fast_clear_screen();
+	RESULT_UNUSED(fast_clear_screen());
 	uint8_t sens_num = 0U;
-	gotoXY(0U, 8U);
-	zprint("Ready to start\n", NORM);
+	RESULT_UNUSED(gotoXY(0U, 8U));
+	RESULT_UNUSED(zprint("Ready to start\n", NORM));
 	if (p_tc == tc1_cal_data) {
-		zprint("TC1", NORM);
+		RESULT_UNUSED(zprint("TC1", NORM));
 		sens_num = 1U;
 	} else {
-		zprint("TC2", NORM);
+		RESULT_UNUSED(zprint("TC2", NORM));
 		sens_num = 2U;
 	}
-	zprint(" calibration?\n", NORM);
-	zprint("Press ENTER\n", NORM);
-	zprint("or ESC\n", NORM);
+	RESULT_UNUSED(zprint(" calibration?\n", NORM));
+	RESULT_UNUSED(zprint("Press ENTER\n", NORM));
+	RESULT_UNUSED(zprint("or ESC\n", NORM));
 
 	clear_key_buffer();
 	key_code_t key;
@@ -144,12 +144,12 @@ static ErrorStatus calibrate_TC(tc_cal_data_t *p_tc)
 	}
 
 	/* next step */
-	fast_clear_screen();
-	gotoXY(0U, 8U);
-	zprint("Cool TC to 0C\n", NORM);
-	zprint("Press ENTER\n", NORM);
-	zprint("when ready..\n", NORM);
-	wait_for_key(ENTER_KEY_RELEASED);
+	RESULT_UNUSED(fast_clear_screen());
+	RESULT_UNUSED(gotoXY(0U, 8U));
+	RESULT_UNUSED(zprint("Cool TC to 0C\n", NORM));
+	RESULT_UNUSED(zprint("Press ENTER\n", NORM));
+	RESULT_UNUSED(zprint("when ready..\n", NORM));
+	RESULT_UNUSED(wait_for_key(ENTER_KEY_RELEASED));
 
 	/* reset validity */
 	p_tc->valid = false;
@@ -158,12 +158,12 @@ static ErrorStatus calibrate_TC(tc_cal_data_t *p_tc)
 	averaged_data_t meas0;
 	meas0 = get_average_adc_meas();
 
-	fast_clear_screen();
-	gotoXY(0U, 8U);
-	zprint("Heat TC to 100C\n", NORM);
-	zprint("Press ENTER\n", NORM);
-	zprint("when ready..\n", NORM);
-	wait_for_key(ENTER_KEY_RELEASED);
+	RESULT_UNUSED(fast_clear_screen());
+	RESULT_UNUSED(gotoXY(0U, 8U));
+	RESULT_UNUSED(zprint("Heat TC to 100C\n", NORM));
+	RESULT_UNUSED(zprint("Press ENTER\n", NORM));
+	RESULT_UNUSED(zprint("when ready..\n", NORM));
+	RESULT_UNUSED(wait_for_key(ENTER_KEY_RELEASED));
 
 	/* measure at 100C */
 	averaged_data_t meas100;
@@ -172,19 +172,19 @@ static ErrorStatus calibrate_TC(tc_cal_data_t *p_tc)
 	float B;
 	float A;
 
-	fast_clear_screen();
-	gotoXY(0U, 8U);
+	RESULT_UNUSED(fast_clear_screen());
+	RESULT_UNUSED(gotoXY(0U, 8U));
 
 	if (sens_num == 1U) {
 		B = (float)(meas0.average_val0);
-		A = (float)(100.0F / (meas100.average_val0 - meas0.average_val0) );
-		zprint("TC1", NORM);
+		A = 100.0F / ((float)meas100.average_val0 - (float)meas0.average_val0);
+		RESULT_UNUSED(zprint("TC1", NORM));
 	} else {
-		B = (float)(-meas0.average_val1);
-		A = (float)(100.0F / (meas100.average_val1 - meas0.average_val1) );
-		zprint("TC2", NORM);
+		B = (float)meas0.average_val1;
+		A = 100.0F / ((float)meas100.average_val1 - (float)meas0.average_val1);
+		RESULT_UNUSED(zprint("TC2", NORM));
 	}
-	zprint(" calibrated.\n", NORM);
+	RESULT_UNUSED(zprint(" calibrated.\n", NORM));
 
 	p_tc->A = A;
 	p_tc->B = B;
@@ -225,23 +225,23 @@ ErrorStatus calibrate_TC2(void)
  */
 void print_current_temperature(void)
 {
-	fast_clear_screen();
+	RESULT_UNUSED(fast_clear_screen());
 	clear_key_buffer();
 	while(true) {
-		gotoXY(0U, 8U);
+		RESULT_UNUSED(gotoXY(0U, 8U));
 		averaged_data_t tmp = get_temperature();
-		char	buf[6] = {0};
+		char	buf[6] = {'\0'};
 		uint16_to_asciiz(tmp.average_val0, (char*)&buf);
-		zprint("TC1 = ", NORM);
-		zprint(buf, NORM);
-		zprint(" C\n", NORM);
+		RESULT_UNUSED(zprint("TC1 = ", NORM));
+		RESULT_UNUSED(zprint(buf, NORM));
+		RESULT_UNUSED(zprint(" C\n", NORM));
 
 		uint16_to_asciiz(tmp.average_val1, (char*)&buf);
-		zprint("TC2 = ", NORM);
-		zprint(buf, NORM);
-		zprint(" C\n", NORM);
+		RESULT_UNUSED(zprint("TC2 = ", NORM));
+		RESULT_UNUSED(zprint(buf, NORM));
+		RESULT_UNUSED(zprint(" C\n", NORM));
 
-		zprint("\nPress ANY key\n to return\n", NORM);
+		RESULT_UNUSED(zprint("\nPress ANY key\n to return\n", NORM));
 		sys_helpers_delay_ms(50U);
 
 		key_code_t k = get_key();

@@ -38,7 +38,7 @@ static numeric_t stof(const char *s)
 	}
 
 	bool point_seen = false;
-	while (*s != 0x00) {
+	while (*s != '\0') {
 		if (*s == '.') {
 			if (point_seen) {
 				/* more than one point - error */
