@@ -24,7 +24,7 @@
 
 #include "ssd1306.h"
 
-#include "font8x8-master\font8x8_basic.h"
+#include "font8x8-master/font8x8_basic.h"
 
 static struct_Cursor myCur;
 static struct_FrameBuffer fb1;

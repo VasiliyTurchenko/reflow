@@ -96,7 +96,7 @@ void Error_Handler(void);
 #define MIN_PWM_DURATION (3540U)
 #define MAX_PWM_DURATION (3900U)
 
-#define MID_PWM_DURATION ( MIN_PWM_DURATION + ((MAX_PWM_DURATION - MIN_PWM_DURATION) / 2) )
+#define MID_PWM_DURATION ( MIN_PWM_DURATION + ((MAX_PWM_DURATION - MIN_PWM_DURATION) / 2U) )
 
 extern volatile uint32_t SPI2_TxCplt_flag;
 extern volatile uint32_t RX_ready_flag;
