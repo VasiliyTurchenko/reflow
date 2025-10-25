@@ -1,0 +1,49 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+*.uvguix.*
+*.scvd*
+
+# Coverage Outputs
+#test/coverage/*.gcno
+#coverage_output
+
+# Lint setup, apart from global
+*.lnt
+#!MISRA_C_2012_Config.lnt
+
+CMakeLists.txt.user
+buildinfo.h
+version_info.h
+**/build/
+

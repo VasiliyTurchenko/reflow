@@ -11,7 +11,7 @@ if (CMAKE_SYSTEM_NAME MATCHES Generic)
 ## directories
 
 # PC-Linf function
-include(${TOOLCHAIN_PREFIX}/pc-lint.cmake)
+#include(${TOOLCHAIN_PREFIX}/pc-lint.cmake)
 
 
 set(STARTUP_CODE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -40,11 +40,11 @@ message(STATUS "LDSCRIPT = " ${LDSCRIPT})
 ### generate map file
 FUNCTION(ADD_MAPFILE TARGET)
     IF(EXECUTABLE_OUTPUT_PATH)
-      SET(MAPFILENAME ${EXECUTABLE_OUTPUT_PATH}/${TARGET}.map)
-    ELSE()
-      SET(MAPFILENAME ${TARGET}.map)
-    ENDIF()
-        message("MAPFILENAME = " ${MAPFILENAME})
+	  SET(MAPFILENAME ${EXECUTABLE_OUTPUT_PATH}/${TARGET}.map)
+	ELSE()
+	  SET(MAPFILENAME ${TARGET}.map)
+	ENDIF()
+	    message("MAPFILENAME = " ${MAPFILENAME})
 ENDFUNCTION()
 
 message(VERBOSE "TARGET NAME = " ${MASTER_BOARD})
@@ -114,13 +114,13 @@ target_link_options		(
 					"-Wl,-V"
 					"-Wl,--cref"
 					${COMPILE_FLAGS}
-					)
+				    )
 target_link_libraries		(
 	                                ${BOARD}
 					c
 					m
 					nosys
-					)
+				    )
 
 STM32_ADD_HEX_BIN_TARGETS(${BOARD})
 STM32_PRINT_SIZE_OF_TARGETS(${BOARD})
@@ -147,7 +147,7 @@ if(COMMAND add_pc_lint)
 # target
                                 ${t_name}
 				${s}
-				)
+			    )
 	endforeach()
 endif(COMMAND add_pc_lint)
 

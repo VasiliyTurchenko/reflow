@@ -4,8 +4,8 @@
   * Description        : This file contains all the functions prototypes for
   *                      the ssd1306 OLED controller
   ******************************************************************************
-	*	v.0.0.1
-	* 18-11-2017
+    *	v.0.0.1
+    * 18-11-2017
   *
   ******************************************************************************
   */
@@ -23,7 +23,7 @@
 #include "spi.h"
 
 
-uint8_t		UpdateSSD1306(SPI_HandleTypeDef *OLED_hspi, ptr_fb fb);
+uint8_t		UpdateSSD1306(void *OLED_hspi_, ptr_fb fb);
 uint8_t		CompleteUpdateSSD1306_callback(SPI_HandleTypeDef *OLED_hspi, ptr_fb fb);
 uint8_t		InitSSD1306(SPI_HandleTypeDef *OLED_hspi);
 uint8_t		InitSSD1303(SPI_HandleTypeDef *OLED_hspi);

@@ -14,85 +14,80 @@
 
 uint32_t CRC32_helper(uint8_t *buf, size_t bufsize, uint32_t initial)
 {
-	uint32_t retVal = 0U;
-	if (buf == NULL) {
-		goto fExit;
-	}
-	/* initialize crc32 hardware module */
-	if (HAL_CRC_GetState(&hcrc) != HAL_CRC_STATE_READY) {
-		MX_CRC_Init();
-	}
+        uint32_t retVal = 0U;
+        if (buf == NULL) {
+                goto fExit;
+        }
+        /* initialize crc32 hardware module */
+        if (HAL_CRC_GetState(&hcrc) != HAL_CRC_STATE_READY) {
+                MX_CRC_Init();
+        }
 
-	size_t words = bufsize / sizeof(uint32_t);
-	size_t bytes = bufsize % sizeof(uint32_t);
-	uint32_t *p;
-	p = (uint32_t *)(void *)buf;
+        size_t words = bufsize / sizeof(uint32_t);
+        size_t bytes = bufsize % sizeof(uint32_t);
+        uint32_t *p;
+        p = (uint32_t *)(void *)buf;
 
-	if (initial != 0U) {
-		retVal = HAL_CRC_Calculate(&hcrc, &initial,
-					   1U); /* process initial */
-	}
+        if (initial != 0U) {
+                retVal = HAL_CRC_Calculate(&hcrc, &initial,
+                                           1U); /* process initial */
+        }
 
-	/* whole words */
-	if (words != 0U) {
-		if (initial == 0U) {
-			retVal = HAL_CRC_Calculate(&hcrc, p,
-						   words); /* then buffer */
-		} else {
-			retVal = HAL_CRC_Accumulate(&hcrc, p,
-						    words); /* then buffer */
-		}
-	}
+        /* whole words */
+        if (words != 0U) {
+                if (initial == 0U) {
+                        retVal = HAL_CRC_Calculate(&hcrc, p,
+                                                   words); /* then buffer */
+                } else {
+                        retVal = HAL_CRC_Accumulate(&hcrc, p,
+                                                    words); /* then buffer */
+                }
+        }
 
-	/* bytes left */
-	if (bytes != 0U) {
-#if defined(_LITTLE_ENDIAN)
-		union {
-			uint32_t u32;
-			uint8_t u8[4];
-		} tmp;
+        /* bytes left */
+        if (bytes != 0U) {
 
-		tmp.u32 = 0U;
+                union {
+                        uint32_t u32;
+                        uint8_t u8[4];
+                } tmp;
 
-		if (bytes > 2U) { /* single byte in the tail */
-			tmp.u8[0] = buf[bufsize - 3U];
-		}
-		if (bytes > 3U) {
-			tmp.u8[1] = buf[bufsize - 2U];
-		}
-		if (bytes > 4U) {
-			tmp.u8[2] = buf[bufsize - 1U];
-		}
+                tmp.u32 = 0U;
 
-#elif defined(_BIG_ENDIAN)
-		union {
-			uint32_t u32;
-			uint8_t u8[4];
-		} tmp;
 
-		tmp.u32 = 0U;
+#if defined(__LITTLE_ENDIAN__)
+                if (bytes > 2U) { /* single byte in the tail */
+                        tmp.u8[0] = buf[bufsize - 3U];
+                }
+                if (bytes > 3U) {
+                        tmp.u8[1] = buf[bufsize - 2U];
+                }
+                if (bytes > 4U) {
+                        tmp.u8[2] = buf[bufsize - 1U];
+                }
 
-		if (bytes > 2U) { /* single byte in the tail */
-			tmp.u8[3] = buf[bufsize - 3U];
-		}
-		if (bytes > 3U) {
-			tmp.u8[2] = buf[bufsize - 2U];
-		}
-		if (bytes > 4U) {
-			tmp.u8[1] = buf[bufsize - 1U];
-		}
+#elif defined(__BIG_ENDIAN__)
+                if (bytes > 2U) { /* single byte in the tail */
+                        tmp.u8[3] = buf[bufsize - 3U];
+                }
+                if (bytes > 3U) {
+                        tmp.u8[2] = buf[bufsize - 2U];
+                }
+                if (bytes > 4U) {
+                        tmp.u8[1] = buf[bufsize - 1U];
+                }
 #else
-#error Endianness error!
+//#error Endianness error!
 #endif
 
-		if ((initial != 0U) || (words != 0U)) {
-			retVal = HAL_CRC_Accumulate(&hcrc, &tmp.u32, 1U);
-		} else {
-			retVal = HAL_CRC_Calculate(&hcrc, &tmp.u32, 1U);
-		}
-	}
+                if ((initial != 0U) || (words != 0U)) {
+                        retVal = HAL_CRC_Accumulate(&hcrc, &tmp.u32, 1U);
+                } else {
+                        retVal = HAL_CRC_Calculate(&hcrc, &tmp.u32, 1U);
+                }
+        }
 
 fExit:
-	HAL_CRC_DeInit(&hcrc);
-	return retVal;
+        HAL_CRC_DeInit(&hcrc);
+        return retVal;
 }
