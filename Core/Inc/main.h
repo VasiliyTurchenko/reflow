@@ -62,14 +62,28 @@ void Error_Handler(void);
 
 #define LED0_Pin GPIO_PIN_13
 #define LED0_GPIO_Port GPIOC
-#define KEY_UP_Pin GPIO_PIN_2
-#define KEY_UP_GPIO_Port GPIOA
-#define KEY_DOWN_Pin GPIO_PIN_3
-#define KEY_DOWN_GPIO_Port GPIOA
-#define KEY_ENTER_Pin GPIO_PIN_4
-#define KEY_ENTER_GPIO_Port GPIOA
-#define KEY_ESC_Pin GPIO_PIN_5
-#define KEY_ESC_GPIO_Port GPIOA
+// #define KEY_UP_Pin GPIO_PIN_2
+// #define KEY_UP_GPIO_Port GPIOA
+// #define KEY_DOWN_Pin GPIO_PIN_3
+// #define KEY_DOWN_GPIO_Port GPIOA
+// #define KEY_ENTER_Pin GPIO_PIN_4
+// #define KEY_ENTER_GPIO_Port GPIOA
+// #define KEY_ESC_Pin GPIO_PIN_5
+// #define KEY_ESC_GPIO_Port GPIOA
+
+#define COL0_PIN    GPIO_PIN_0
+#define COL1_PIN    GPIO_PIN_1
+#define COL0_GPIO_Port    GPIOA
+#define COL1_GPIO_Port    GPIOA
+
+#define ROW0_PIN    GPIO_PIN_2
+#define ROW1_PIN    GPIO_PIN_3
+#define ROW2_PIN    GPIO_PIN_4
+
+#define ROW0_GPIO_Port    GPIOA
+#define ROW1_GPIO_Port    GPIOA
+#define ROW2_GPIO_Port    GPIOA
+
 #define MAINS_Pin GPIO_PIN_6
 #define MAINS_GPIO_Port GPIOA
 #define MAINS_EXTI_IRQn EXTI9_5_IRQn

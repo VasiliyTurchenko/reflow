@@ -19,79 +19,75 @@
 //#include <stdio.h>
 #include <limits.h>
 
-#ifdef		USE_FRAMEBUFFER
+#ifdef USE_FRAMEBUFFER
 
-#define	MAX_CHAR_SIZE		32				//	max char size 32*32 pix
-#define	TFS                     (MAX_CHAR_SIZE/CHAR_BIT)+1
-#define INVERT		0x01
-#define NORM		0x00
-#define UNDERL		0x01 << 1
-#define UPSDN		0x01 << 2
-
-
+#define MAX_CHAR_SIZE 32 //	max char size 32*32 pix
+#define TFS (MAX_CHAR_SIZE / CHAR_BIT) + 1
+#define INVERT 0x01
+#define NORM 0x00
+#define UNDERL 0x01 << 1
+#define UPSDN 0x01 << 2
 
 /* Structures used in the module ---------------------------------------------*/
 
-typedef struct {			// Character generator parameters
-    uint8_t		CharWidth;	// Visible symbol width in pixels
-    uint8_t		CharHeight;	// Visible symbol height in pixels
-    char		BytesPerChar;	// Size of the char image in bytes
-    char		StartCharCode;	// Code of the first char in generator memmory
-    char		EndCharCode;	// Code of the last char in generator memmory
-    const uint8_t		*pROM;		// pointer to character generator array
-}	Struct_CharGen;
+typedef struct {                  // Character generator parameters
+    uint8_t        CharWidth;     // Visible symbol width in pixels
+    uint8_t        CharHeight;    // Visible symbol height in pixels
+    char           BytesPerChar;  // Size of the char image in bytes
+    char           StartCharCode; // Code of the first char in generator memmory
+    char           EndCharCode;   // Code of the last char in generator memmory
+    const uint8_t *pROM;          // pointer to character generator array
+} Struct_CharGen;
 
-typedef	Struct_CharGen*		ptr_chargen;
+typedef Struct_CharGen *ptr_chargen;
 
-typedef struct struct_FrameBuffer {	// () Framebuffer parameters
-    unsigned char	*pFB;		// pointer to the framebuffer[0]
-    uint32_t	FBWidth;	// framefuffer width in pixels
-    uint32_t	FBWidthInBytes;	// framefuffer width in bytes
-    uint32_t	FBHeight;	// framebuffee height in pixels
-    uint32_t	ScreenHeight; 	// visible area height in pixels
-    uint32_t	FBy0;		// start y coordinate (in pixels) of the visible area
-    uint8_t		(*fUpdateScreen)(void*, struct struct_FrameBuffer*);	// pointer to the update hardware screen function
-    uint32_t	BitsPerPixel;	// how many bits per pixel
-    enum		{PIO, I2C, SPI} FBiface;
-    bool		Locked;
-    bool		FBOrientatonX;	// X - pixels in bytes along X; !X - along Y
+typedef struct struct_FrameBuffer { // () Framebuffer parameters
+    unsigned char *pFB;             // pointer to the framebuffer[0]
+    uint32_t       FBWidth;         // framefuffer width in pixels
+    uint32_t       FBWidthInBytes;  // framefuffer width in bytes
+    uint32_t       FBHeight;        // framebuffee height in pixels
+    uint32_t       ScreenHeight;    // visible area height in pixels
+    uint32_t       FBy0;            // start y coordinate (in pixels) of the visible area
+    uint8_t (*fUpdateScreen)(
+            void *, struct struct_FrameBuffer *); // pointer to the update hardware screen function
+    uint32_t BitsPerPixel;                        // how many bits per pixel
+    enum { PIO, I2C, SPI } FBiface;
+    bool Locked;
+    bool FBOrientatonX; // X - pixels in bytes along X; !X - along Y
 
-}	struct_FrameBuffer;
+} struct_FrameBuffer;
 
-typedef	struct_FrameBuffer*		ptr_fb;
+typedef struct_FrameBuffer *ptr_fb;
 
 typedef struct {
-    uint32_t	CursorPosX;	// current cursor position X
-    uint32_t	CursorPosY;	// current cursor position X
-    bool		CursorVisible;	//  visibility of the cursor
-    bool		Blinking;	// blinking
-    enum		{CLine, CBox} CursorShape ; // cursor shape
-}	struct_Cursor;
+    uint32_t CursorPosX;              // current cursor position X
+    uint32_t CursorPosY;              // current cursor position X
+    bool     CursorVisible;           //  visibility of the cursor
+    bool     Blinking;                // blinking
+    enum { CLine, CBox } CursorShape; // cursor shape
+} struct_Cursor;
 
-typedef	struct_Cursor*				ptr_cursor;
+typedef struct_Cursor *ptr_cursor;
 
-typedef	struct	{																	// context of the virtual output device
-    ptr_fb		pDevFB;
-    ptr_chargen	pDevCHG;
-    ptr_cursor	pDevCursor;
+typedef struct { // context of the virtual output device
+    ptr_fb      pDevFB;
+    ptr_chargen pDevCHG;
+    ptr_cursor  pDevCursor;
 } struct_Context;
 
-typedef struct_Context*				ptr_context;
+typedef struct_Context *ptr_context;
 
 // Exported constants --------------------------------------------------------
 
-extern 		struct_Context*		context1;
+extern struct_Context *context1;
 
 // Private macros --------------------------------------------------------
 
-
 // Exported macro ------------------------------------------------------------
-
-
 
 // Exported functions --------------------------------------------------------
 
-uint8_t	FB_Init(void);
+uint8_t FB_Init(void);
 
 // shifts bit field "* field" of "flen" bytes left by "ns" times
 uint8_t sbfl(uint8_t *field, uint32_t flen, uint32_t ns);
@@ -106,9 +102,9 @@ uint8_t fbfl(uint8_t *field, uint32_t flen, uint32_t ns);
 uint8_t fbfr(uint8_t *field, uint32_t flen, uint32_t ns);
 
 // Puts the char and moves cursor to the next pos
-uint8_t	PutChar(char sym, uint8_t mode);
+uint8_t PutChar(char sym, uint8_t mode);
 
-uint8_t	PutChar1(char sym, uint8_t mode);	// Puts the char and moves cursor to the next pos
+uint8_t PutChar1(char sym, uint8_t mode); // Puts the char and moves cursor to the next pos
 
 uint8_t gotoXY(uint32_t x, uint32_t y);
 
@@ -148,6 +144,6 @@ uint32_t zline(int x0, int y0, int x1, int y1, uint32_t color);
  */
 uint8_t fast_clear_screen(void);
 
-#endif	/* USE_FRAMEBUFFER */
+#endif /* USE_FRAMEBUFFER */
 #endif /* __framebuffer_H */
 /************************ (C) COPYRIGHT turchenkov@gmail.com *****END OF FILE****/

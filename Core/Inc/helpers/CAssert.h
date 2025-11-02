@@ -21,8 +21,15 @@
  *  \param file A sequence of legal identifier characters that should
  *  uniquely identify the source file in which this condition appears.
  */
+
+#ifndef CASSERT_H
+#define CASSERT_H
+#include "unused.h"
+
 #define CASSERT(predicate, file) _impl_CASSERT_LINE(predicate,__LINE__,file)
 
 #define _impl_PASTE(a,b) a##b
 #define _impl_CASSERT_LINE(predicate, line, file) \
-    typedef char _impl_PASTE(assertion_failed_##file##_,line)[2*!!(predicate)-1];
+	typedef char ATTR_UNUSED  _impl_PASTE(assertion_failed_##file##_,line)[(2*(int)(!!(predicate)))-1];
+
+#endif

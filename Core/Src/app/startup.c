@@ -97,7 +97,7 @@ ErrorStatus AppStartUp(void)
 
 #ifdef USE_FRAMEBUFFER
     /* initialize display */
-    InitSSD1303(&hspi2);
+    InitSSD1306(&hspi2);
     FB_Init();
     fb_fill_unfill();
     out_device_t tmp_dev = { zprint, gotoXY, fast_clear_screen };
