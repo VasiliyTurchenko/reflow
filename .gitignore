@@ -45,5 +45,8 @@
 CMakeLists.txt.user
 buildinfo.h
 version_info.h
+
+compiler/
+
 **/build/
 

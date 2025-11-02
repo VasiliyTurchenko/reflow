@@ -1,219 +1,194 @@
-cmake_minimum_required(VERSION 3.15)
+# TOP LEVEL CMAKEFILE #######
 
-project(reflow
-	VERSION 1.0
-	DESCRIPTION "Reflow oven controller"
-	LANGUAGES C ASM)
-enable_language(ASM)
+cmake_minimum_required(VERSION 3.20)
+set(CMAKE_VERBOSE_MAKEFILE)
+set(CMAKE_C_STANDARD 17)
+# set(CMAKE_CXX_STANDARD 20)
 
-if (CMAKE_SYSTEM_NAME MATCHES Generic)
+project(REFLOW LANGUAGES C CXX ASM)
 
-## directories
+message(STATUS "\nProcessing ${CMAKE_CURRENT_LIST_FILE}...")
+message(STATUS "CMAKE_SYSROOT =  ${CMAKE_SYSROOT}")
 
-# PC-Linf function
-#include(${TOOLCHAIN_PREFIX}/pc-lint.cmake)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -v")
 
+include(CheckCCompilerFlag)
+option(ENABLE_CUSTOM_COMPILER_FLAGS "Enables custom compiler flags" ON)
+if(ENABLE_CUSTOM_COMPILER_FLAGS)
+    if(("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") OR ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU"))
+        list(
+            APPEND
+            custom_compiler_flags_c
+            # -std=c89
+            -pedantic
+            -Wall
+            -Wextra
+            # -Werror
+            -Wstrict-prototypes
+            -Wwrite-strings
+            -Wshadow
+            -Winit-self
+            -Wcast-align
+            -Wformat=2
+            -Wmissing-prototypes
+            -Wstrict-overflow=2
+            -Wcast-qual
+            -Wundef
+            -Wswitch-default
+            -Wconversion
+            -Wc++-compat
+            -fstack-protector-strong
+            -Wcomma
+            -Wdouble-promotion
+            -Wparentheses
+            -Wformat-overflow
+            -Wunused-macros
+            -Wmissing-variable-declarations
+            -Wused-but-marked-unused
+            -Wswitch-enum)
+        list(
+            APPEND
+            custom_compiler_flags_cxx
+            # -std=c89
+            -pedantic
+            -Wall
+            -Wextra
+            # -Werror
+            -Wwrite-strings
+            -Wshadow
+            -Winit-self
+            -Wcast-align
+            -Wformat=2
+            -Wstrict-overflow=2
+            -Wcast-qual
+            -Wundef
+            -Wswitch-default
+            -Wconversion
+            -fstack-protector-strong
+            -Wcomma
+            -Wdouble-promotion
+            -Wparentheses
+            -Wformat-overflow
+            -Wunused-macros
+            -Wmissing-variable-declarations
+            -Wused-but-marked-unused
+            -Wswitch-enum)
 
-set(STARTUP_CODE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-message("STARTUP_CODE_DIR = " ${STARTUP_CODE_DIR})
-
-set(LINKER_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-
-set(TARGET_MCU "stm32f1")
-
-IF(TARGET_MCU MATCHES "stm32f1")
-
-        message	(STATUS "TARGET_MCU: " ${TARGET_MCU})
-	set	(D_MCU "-DSTM32F103xB")
-	set	(STARTUP_CODE_SOURCE ${STARTUP_CODE_DIR}/startup_stm32f103xb.s)
-	SET	(LDSCRIPT	${LINKER_SCRIPTS_DIR}/STM32F103C8Tx_FLASH.ld)
-
-	SET	(COMPILE_FLAGS -mcpu=cortex-m3 -mthumb -mfloat-abi=soft  -mno-thumb-interwork -v)
-else()
-
-	message(FATAL_ERROR "TARGET_MCU NOT DEFINED!")
-
+        # elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC") # Disable warning c4001 - nonstandard
+        # extension 'single line comment' was used # Define _CRT_SECURE_NO_WARNINGS to disable
+        # deprecation warnings for "insecure" C library functions list(APPEND custom_compiler_flags
+        # /GS /Za /sdl /W4 /wd4001 /D_CRT_SECURE_NO_WARNINGS )
+    endif()
 endif()
 
-message(STATUS "LDSCRIPT = " ${LDSCRIPT})
-
-### generate map file
-FUNCTION(ADD_MAPFILE TARGET)
-    IF(EXECUTABLE_OUTPUT_PATH)
-	  SET(MAPFILENAME ${EXECUTABLE_OUTPUT_PATH}/${TARGET}.map)
-	ELSE()
-	  SET(MAPFILENAME ${TARGET}.map)
-	ENDIF()
-	    message("MAPFILENAME = " ${MAPFILENAME})
-ENDFUNCTION()
-
-message(VERBOSE "TARGET NAME = " ${MASTER_BOARD})
-
-message ("CMAKE_TOOLCHAIN_FILE = " ${CMAKE_TOOLCHAIN_FILE})
-message("CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
-
-include(${CMAKE_CURRENT_SOURCE_DIR}/sources_list.cmake)
-
-
-# MCU independent definitions
-add_definitions(-DUSE_HAL_DRIVER)
-add_definitions(-DDEBUG)
-
-# for desktop&mcu code
-add_definitions(-DMCU_TARGET)
-
-add_definitions(-DNO_LAN)
-add_definitions(-DUSE_FRAMEBUFFER)
-
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-	message( STATUS "Compiling with debug info")
-	set(CMAKE_CXX_DEBUG_FLAGS "-gdwarf-2 -Og")
-else()
-	set(CMAKE_CXX_DEBUG_FLAGS "-O3")
+option(ENABLE_SANITIZERS "Enables AddressSanitizer and UndefinedBehaviorSanitizer." OFF)
+if(ENABLE_SANITIZERS)
+    list(
+        APPEND
+        custom_compiler_flags_c
+        -fno-omit-frame-pointer
+        -fsanitize=address
+        -fsanitize=undefined
+        -fsanitize=float-cast-overflow
+        -fsanitize-address-use-after-scope
+        -fsanitize=integer
+        -01
+        -fno-sanitize-recover)
 endif()
 
-##assembler flags
-set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -Wall -fdata-sections -ffunction-sections")
+# apply custom compiler flags
+foreach(compiler_flag ${custom_compiler_flags_c})
+    # remove problematic characters
+    string(REGEX REPLACE "[^a-zA-Z0-9]" "" current_variable ${compiler_flag})
 
-set(GCC_COVERAGE_COMPILE_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS} -Wall -fmessage-length=0 -fdata-sections -ffunction-sections --specs=nano.specs")
+    check_c_compiler_flag(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
+    if(FLAG_SUPPORTED_${current_variable})
+        list(APPEND supported_compiler_flags)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${compiler_flag}")
+    endif()
+endforeach()
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} ${CMAKE_CXX_DEBUG_FLAGS}")
-set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} ${CMAKE_CXX_DEBUG_FLAGS}")
+# apply custom compiler flags
+foreach(compiler_flag ${custom_compiler_flags_cxx})
+    # remove problematic characters
+    string(REGEX REPLACE "[^a-zA-Z0-9]" "" current_variable ${compiler_flag})
+    # TODO FIX ME
+    check_c_compiler_flag(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
+    if(FLAG_SUPPORTED_${current_variable})
+        list(APPEND supported_compiler_flags_cxx)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${compiler_flag}")
+    endif()
+endforeach()
 
-message(STATUS "100: CMAKE_CXX_FLAGS = " ${CMAKE_CXX_FLAGS})
-message(STATUS "101: CMAKE_C_FLAGS = " ${CMAKE_C_FLAGS})
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${supported_compiler_flags} -v")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${supported_compiler_flags_cxx} -v")
 
+set(UNITTEST_TARGET_PREFIX unit_test_)
 
-set (BOARD ${PROJECT_NAME}_${TARGET_MCU})
+# add project-wide directory with useful macros, project-wide definitions, etc.
+set(COMPILER_INTERNALS_INC
+    ${CMAKE_CURRENT_SOURCE_DIR}/compiler
+    CACHE INTERNAL "")
+message(STATUS "COMPILER_INTERNALS_INC =  ${COMPILER_INTERNALS_INC}")
 
-add_executable			(
-	                        ${BOARD}
-				${LIST_OF_SOURCES}
-#				${MCU_SOURCES_GROUP}
-                                ${STARTUP_CODE_SOURCE}
-				)
+set(BUILDINFO_PATH
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    CACHE INTERNAL "")
+message(STATUS "BUILDINFO_PATH = ${BUILDINFO_PATH}")
 
-target_compile_definitions	(
-	                                ${BOARD} PRIVATE
-					-DMASTERBOARD
-					${D_MCU}
-				)
+add_custom_command(
+    OUTPUT ${BUILDINFO_PATH}/buildinfo.h
+    COMMAND rm -f ${BUILDINFO_PATH}/buildinfo.h && git rev-parse --short=8 HEAD | xargs python3
+            scripts/gen_info.py > buildinfo.h
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    VERBATIM)
 
+add_custom_target(gen_buildinfo ALL DEPENDS ${BUILDINFO_PATH}/buildinfo.h)
 
-target_compile_options		(
-	                                ${BOARD} PRIVATE
-					${COMPILE_FLAGS}
-				)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME)
+    # PC-Lint function INCLUDE_LINT variable is set/reset by the command line option for cmake
+    if(${INCLUDE_LINT})
+        if(EXISTS ${TOOLCHAIN_PREFIX}/pc-lint2.cmake)
+            include(${TOOLCHAIN_PREFIX}/pc-lint2.cmake)
+        endif()
+    endif()
 
-target_link_options		(
-	                                ${BOARD} BEFORE PRIVATE
-					"-Wl,-Map=${BOARD}.map"
-					"-Wl,-T${LDSCRIPT}"
-					"-Wl,--gc-sections"
-					"-Wl,--verbose"
-					"-Wl,-V"
-					"-Wl,--cref"
-					${COMPILE_FLAGS}
-				    )
-target_link_libraries		(
-	                                ${BOARD}
-					c
-					m
-					nosys
-				    )
+    # comment it out, if not needed
+    add_definitions(-DMCU_TARGET)
 
-STM32_ADD_HEX_BIN_TARGETS(${BOARD})
-STM32_PRINT_SIZE_OF_TARGETS(${BOARD})
-#STM32_ADD_DUMP_TARGET(${BOARD})
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/target/mcu)
 
-# добавляем таргет PC-Lint
-if(COMMAND add_pc_lint)
-# establish list of compile defifntiond
-        set (comp_defs_list)
-	list(APPEND comp_defs_list ${D_MCU})
-	list(APPEND comp_defs_list "-DMASTERBOARD")
+    message(STATUS "CMAKE_TOOLCHAIN_FILE = " ${CMAKE_TOOLCHAIN_FILE})
+    message(STATUS "CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
 
-#f antastic loop
-        foreach(s IN LISTS LIST_OF_SOURCES)
+    # PC-Lint target
+    if(COMMAND add_pc_lint)
+        # establish list of compile defifntiond
+        set(comp_defs_list)
+        list(APPEND comp_defs_list ${D_MCU})
+        list(APPEND comp_defs_list ${D_MCU_EXACT})
+        list(APPEND comp_defs_list ${D_HSE_VAL})
 
-		set(t_name)
-		string(REPLACE "/" "_" t_name ${s})
+        # fantastic loop
+        foreach(s IN LISTS ${EXEC_NAME}_LIST_OF_SOURCES)
 
-#		message("t_name = " ${t_name})
+            set(t_name)
+            string(REPLACE "/" "_" t_name ${s})
 
-                add_pc_lint(
-# compile defines
-                                "${comp_defs_list}"
-# target
-                                ${t_name}
-				${s}
-			    )
-	endforeach()
-endif(COMMAND add_pc_lint)
-
-message(STATUS "184: CMAKE_CXX_FLAGS = " ${CMAKE_CXX_FLAGS})
-message(STATUS "185: CMAKE_C_FLAGS = " ${CMAKE_C_FLAGS})
-
-
-#ADD_MAPFILE(${BOARD})
-#message("MAPFILENAME = " ${MAPFILENAME})
+            add_pc_lint(
+                # compile defines
+                "${comp_defs_list}"
+                # target
+                ${t_name} ${EXEC_NAME} ${s})
+        endforeach()
+    endif(COMMAND add_pc_lint)
 
 else()
-MESSAGE("Non-MCU target detected")
-add_executable( i386 Core386/Src/main.c )
 
+    message("Non-MCU target detected")
+
+    # add host target cmake file - for tests on the host
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/target/desktop)
 
 endif()
-
-MESSAGE("*********************")
-message("CMAKE_SYSTEM_NAME = " ${CMAKE_SYSTEM_NAME} "      CMAKE_HOST_SYSTEM_NAME = " ${CMAKE_HOST_SYSTEM_NAME})
-message("CMAKE_SYSTEM = " ${CMAKE_SYSTEM} "      CMAKE_HOST_SYSTEM = " ${CMAKE_HOST_SYSTEM})
-MESSAGE("CMAKE_C_COMPILER = " ${CMAKE_C_COMPILER})
-MESSAGE("CMAKE_BUILD_TYPE = " ${CMAKE_BUILD_TYPE})
-get_cmake_property(EL ENABLED_LANGUAGES)
-message ("ENABLED_LANGUAGES = " ${EL})
-get_cmake_property(LL LINKER_LANGUAGE)
-message ("LINKER_LANGUAGE = " ${LL})
-MESSAGE("*********************")
-
-#foreach(e IN LISTS CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES)
-#	message("CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES = " ${e})
-#endforeach(e)
-
-#foreach(e IN LISTS CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES)
-#	message("CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES = " ${e})
-#endforeach(e)
-
-#
-#function (get_compiler_preprocessor_defines target_comp_defs target)
-set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-
-set(target "${PROJECT_NAME}_preprocessor_defines")
-        # create empty c file in temp dir
-	message("CMAKE_CURRENT_BINARY_DIR = " ${CMAKE_CURRENT_BINARY_DIR})
-	set(test_c_file "${CMAKE_CURRENT_BINARY_DIR}/${target}.c")
-	message("test_c_file = " ${test_c_file})
-	file(WRITE ${test_c_file} "\n")
-
-	set(try_compile_result)
-	set(output_text)
-	set(copy_file "${CMAKE_CURRENT_BINARY_DIR}/${target}.object")
-	set(copy_file_error "${CMAKE_CURRENT_BINARY_DIR}/${target}.stderr")
-
-	#store current variable CMAKE_C_FLAGS
-	set(stored_cmake_c_flags ${CMAKE_C_FLAGS})
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -dM -E")
-
-	try_compile(
-		        try_compile_result
-			"${CMAKE_CURRENT_BINARY_DIR}/preprocessor_defs"
-			${test_c_file}
-			OUTPUT_VARIABLE output_text
-			COPY_FILE ${copy_file}
-			COPY_FILE_ERROR ${copy_file_error}
-	)
-        message("try_compile_result = " ${try_compile_result})
-	message("output_text = " ${output_text})
-	file(REMOVE ${test_c_file})
-
-	set(CMAKE_C_FLAGS ${stored_cmake_c_flags})
