@@ -36,7 +36,7 @@ target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_STM32F1XX_HAL_DRI
 include(sources_list.cmake)
 target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_STM32F103_LIST})
 
-set(COMPILE_FLAGS -mcpu=cortex-m3 -mthumb -mfloat-abi=soft -mno-thumb-interwork -v)
+set(COMPILE_FLAGS -mcpu=cortex-m3 -mthumb -mfloat-abi=soft -mno-thumb-interwork -v -fmessage-length=0 -fdata-sections -ffunction-sections --specs=nano.specs)
 
 # The path to the asm startup file(s)
 set(STARTUP_CODE_DIR ${CMAKE_CURRENT_LIST_DIR}/startup/)
