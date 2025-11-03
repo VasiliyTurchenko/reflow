@@ -47,8 +47,8 @@ set(LINKER_SCRIPTS_DIR ${CMAKE_CURRENT_LIST_DIR}/ld/)
 message("LINKER_SCRIPTS_DIR = " ${LINKER_SCRIPTS_DIR})
 
 set(STARTUP_CODE_SOURCE ${STARTUP_CODE_DIR}/startup_stm32f103xb.s)
-# set(LDSCRIPT ${LINKER_SCRIPTS_DIR}/STM32F103C8Tx_FLASH.ld)
-set(LDSCRIPT ${LINKER_SCRIPTS_DIR}/STM32F103XX_FLASH.ld)
+set(LDSCRIPT ${LINKER_SCRIPTS_DIR}/STM32F103C8Tx_FLASH.ld)
+# set(LDSCRIPT ${LINKER_SCRIPTS_DIR}/STM32F103XX_FLASH.ld)
 
 # ##################################################################################################
 # ##################################################################################################
