@@ -92,8 +92,8 @@ ErrorStatus AppStartUp(void)
 
     log_xputs(MSG_LEVEL_INFO, "\n\nStarting up...\n");
     log_xputs(MSG_LEVEL_INFO, id);
-    log_xputs(MSG_LEVEL_INFO, buildNum_s);
-    log_xputs(MSG_LEVEL_INFO, buildDateTime);
+    log_xputs(MSG_LEVEL_INFO, GIT_HASH);
+    log_xputs(MSG_LEVEL_INFO, BUILD_DATE_TIME);
 
 #ifdef USE_FRAMEBUFFER
     /* initialize display */
@@ -117,7 +117,6 @@ ErrorStatus AppStartUp(void)
     zprint(" * controller * \0", NORM);
     zprint(" *            * \0", NORM);
     zprint(" ************** \0", NORM);
-    zprint(buildNum_s, NORM);
     zprint("\n", NORM);
 
     /* check EEPROM CRC */

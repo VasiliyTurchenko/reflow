@@ -38,7 +38,7 @@ if(ENABLE_CUSTOM_COMPILER_FLAGS)
             -Wswitch-default
             -Wconversion
             -Wc++-compat
-            -fstack-protector-strong
+            # -fstack-protector-strong
             -Wcomma
             -Wdouble-promotion
             -Wparentheses
@@ -145,6 +145,8 @@ add_custom_command(
     VERBATIM)
 
 add_custom_target(gen_buildinfo ALL DEPENDS ${BUILDINFO_PATH}/buildinfo.h)
+
+include_directories(${BUILDINFO_PATH})
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME)
     # PC-Lint function INCLUDE_LINT variable is set/reset by the command line option for cmake

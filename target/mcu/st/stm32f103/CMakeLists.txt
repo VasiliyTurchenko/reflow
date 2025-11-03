@@ -5,17 +5,38 @@ set(TARGET_NAME reflow_${MCU})
 set(EXEC_NAME ${TARGET_NAME})
 add_executable(${EXEC_NAME})
 
-set(DEBUG_SINK_SRC "debug_sink.c")
+# set(DEBUG_SINK_SRC "debug_sink.c")
 
 target_compile_definitions(
-    ${EXEC_NAME} PRIVATE USE_FULL_LL_DRIVER USE_HAL_DRIVER STM32F103CXX STM32F103C8T6
-                         USE_FULL_ASSERT TARGET_NAME=${TARGET_NAME})
+    ${EXEC_NAME}
+    PRIVATE USE_FULL_LL_DRIVER
+            USE_HAL_DRIVER
+            STM32F103CXX
+            STM32F103C8T6
+            STM32F103xB
+            USE_FRAMEBUFFER
+            USE_FULL_ASSERT
+            NO_LAN
+            TARGET_NAME=${TARGET_NAME})
 
-include(${CMAKE_CURRENT_LIST_DIR}/../../..)
-target_include_directories(${EXEC_NAME} PRIVATE ${})
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../src/sources_list.cmake)
+target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_SRC_LIST})
 
-set(COMPILE_FLAGS -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mno-thumb-interwork
-                  -v)
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/sources_list.cmake)
+target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_THIRD_PARTY_LIST})
+
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../target/mcu/st/drivers/CMSIS/sources_list.cmake)
+target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_CMSIS_LIST})
+
+include(
+    ${CMAKE_CURRENT_LIST_DIR}/../../../../target/mcu/st/drivers/STM32F1xx_HAL_Driver/sources_list.cmake
+)
+target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_STM32F1XX_HAL_DRIVER_LIST})
+
+include(sources_list.cmake)
+target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_STM32F103_LIST})
+
+set(COMPILE_FLAGS -mcpu=cortex-m3 -mthumb -mfloat-abi=soft -mno-thumb-interwork -v)
 
 # The path to the asm startup file(s)
 set(STARTUP_CODE_DIR ${CMAKE_CURRENT_LIST_DIR}/startup/)
@@ -26,19 +47,8 @@ set(LINKER_SCRIPTS_DIR ${CMAKE_CURRENT_LIST_DIR}/ld/)
 message("LINKER_SCRIPTS_DIR = " ${LINKER_SCRIPTS_DIR})
 
 set(STARTUP_CODE_SOURCE ${STARTUP_CODE_DIR}/startup_stm32f103xb.s)
-set(LDSCRIPT ${LINKER_SCRIPTS_DIR}/STM32F103C8Tx_FLASH.ld)
-
-set(GROUP_SRC ${CMAKE_CURRENT_LIST_DIR}/src/main.c ${CMAKE_CURRENT_LIST_DIR}/src/${DEBUG_SINK_SRC})
-
-set(GROUP_SRC_COMP_DEBUG
-    ${CMAKE_CURRENT_LIST_DIR}/../../../components/debug/logging.c
-    ${CMAKE_CURRENT_LIST_DIR}/../../../components/debug/my_comm.c
-    ${CMAKE_CURRENT_LIST_DIR}/../../../components/debug/myCRT.c
-    ${CMAKE_CURRENT_LIST_DIR}/../../../components/debug/hex_gen.c
-    ${CMAKE_CURRENT_LIST_DIR}/../../../components/debug/xprintf.c)
-
-set(GROUP_SRC_DRIVERS_HAL_DRIVER
-    ${CMAKE_CURRENT_LIST_DIR}/../../../stm/STM32MP1xx_HAL_Driver/Src/stm32mp1xx_hal.c)
+# set(LDSCRIPT ${LINKER_SCRIPTS_DIR}/STM32F103C8Tx_FLASH.ld)
+set(LDSCRIPT ${LINKER_SCRIPTS_DIR}/STM32F103XX_FLASH.ld)
 
 # ##################################################################################################
 # ##################################################################################################
@@ -46,7 +56,9 @@ set(GROUP_SRC_DRIVERS_HAL_DRIVER
 # ##################################################################################################
 # ##################################################################################################
 
-set(${EXEC_NAME}_LIST_OF_SOURCES ${GROUP_SRC} ${GROUP_CMSIS})
+set(${EXEC_NAME}_LIST_OF_SOURCES
+    ${SRC_SOURCES_LIST} ${THIRD_PARTY_SOURCES_LIST} ${CMSIS_SOURCES_LIST}
+    ${STM32F1XX_HAL_DRIVER_SOURCES_LIST} ${STM32F103_SOURCES_LIST})
 
 target_sources(${EXEC_NAME} PRIVATE ${${EXEC_NAME}_LIST_OF_SOURCES} ${STARTUP_CODE_SOURCE})
 
