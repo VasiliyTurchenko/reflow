@@ -295,7 +295,7 @@ const menu_item_t L0_h = {
     .key_esc_action = NULL,
     .key_enter_action = NULL,
 
-    .menu_string = "    MAIN ME U   ",
+    .menu_string = "    MAIN MENU   ",
 
     .parent = NULL, /* parent node */
     .child = NULL,  /* child node */
