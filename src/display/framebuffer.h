@@ -114,7 +114,7 @@ uint8_t whereXY(uint32_t *x, uint32_t *y);
  * correctly deals with \n
  * 25-11-2017 15:53
  */
-uint32_t zprint(char *sz, uint8_t mode);
+uint32_t zprint(const char *sz, uint8_t mode);
 
 /*
  * The function draws a point with color

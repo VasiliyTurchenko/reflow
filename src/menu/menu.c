@@ -13,9 +13,6 @@
 #include "menu.h"
 
 #include "logging.h"
-#include "my_comm.h"
-
-#include "ascii_helpers.h"
 
 #include "kbd_task.h"
 
@@ -23,21 +20,17 @@
 
 #include "parameters_storage.h"
 
-#include "sys_helpers.h"
-
 #ifdef USE_FRAMEBUFFER
 
 #include "framebuffer.h"
-#include "ssd1306.h"
 
 extern struct_FrameBuffer fb1;
-extern struct_Context *context1;
-extern unsigned char FrameBuffer1[(128 / CHAR_BIT) * (64)];
+extern struct_Context    *context1;
+extern unsigned char      FrameBuffer1[(128 / CHAR_BIT) * (64)];
 #endif
 
 /* flag to redraw menu level */
 static _Bool force_redraw = false;
-
 
 static out_device_t menu_drawer = { NULL, NULL, NULL };
 
@@ -46,12 +39,12 @@ static out_device_t menu_drawer = { NULL, NULL, NULL };
  * @param item
  * @return
  */
-const menu_item_t * up_action(const menu_item_t * item)
+static const menu_item_t *up_action(const menu_item_t *item)
 {
     if (item->prev->item_type == MENU_ITEM_HEADER) {
         return item;
     } else {
-        return  item->prev;
+        return item->prev;
     }
 }
 
@@ -60,9 +53,9 @@ const menu_item_t * up_action(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * dn_action(const menu_item_t * item)
+static const menu_item_t *dn_action(const menu_item_t *item)
 {
-    return  item->next;
+    return item->next;
 }
 
 /**
@@ -70,9 +63,9 @@ const menu_item_t * dn_action(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * go_to_parent(const menu_item_t * item)
+static const menu_item_t *go_to_parent(const menu_item_t *item)
 {
-    return  item->parent;
+    return item->parent;
 }
 
 /**
@@ -80,16 +73,16 @@ const menu_item_t * go_to_parent(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * go_to_child(const menu_item_t * item)
+static const menu_item_t *go_to_child(const menu_item_t *item)
 {
-    return  item->child;
+    return item->child;
 }
 
 /**
  * @brief manual_heater_ctrl
  * @return
  */
-const menu_item_t * manual_heater_ctrl(const menu_item_t * item)
+static const menu_item_t *manual_heater_ctrl(const menu_item_t *item)
 {
     (void)item;
     menu_drawer.clrscr();
@@ -104,9 +97,9 @@ const menu_item_t * manual_heater_ctrl(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * test_profiles(const menu_item_t * item)
+static const menu_item_t *test_profiles(const menu_item_t *item)
 {
-//	test_profiles_get_temp_for_time();
+    //	test_profiles_get_temp_for_time();
     force_redraw = true;
     return item;
 }
@@ -116,17 +109,16 @@ const menu_item_t * test_profiles(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * test_save_cal_data(const menu_item_t * item)
+static const menu_item_t *test_save_cal_data(const menu_item_t *item)
 {
-
-    tc_cal_data_t * cal1;
-    static const char * fail = "test_save_cal_data failed";
+    tc_cal_data_t     *cal1;
+    static const char *fail = "test_save_cal_data failed";
 
     cal1 = (tc_cal_data_t *)get_cfg(CFG_TYPE_TC_CAL1);
     if (cal1 == NULL) {
         log_xputs(MSG_LEVEL_FATAL, fail);
     } else {
-        cal1->A = (float)HAL_GetTick();
+        cal1->A     = (float)HAL_GetTick();
         cal1->valid = true;
 
         if (save_cfg_pool() != SUCCESS) {
@@ -141,7 +133,7 @@ const menu_item_t * test_save_cal_data(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * calibrate_TC1_wrapper(const menu_item_t * item)
+static const menu_item_t *calibrate_TC1_wrapper(const menu_item_t *item)
 {
     calibrate_TC1();
     force_redraw = true;
@@ -153,7 +145,7 @@ const menu_item_t * calibrate_TC1_wrapper(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * calibrate_TC2_wrapper(const menu_item_t * item)
+static const menu_item_t *calibrate_TC2_wrapper(const menu_item_t *item)
 {
     calibrate_TC2();
     force_redraw = true;
@@ -165,7 +157,7 @@ const menu_item_t * calibrate_TC2_wrapper(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * temperature_info_wrapper(const menu_item_t * item)
+static const menu_item_t *temperature_info_wrapper(const menu_item_t *item)
 {
     print_current_temperature();
     force_redraw = true;
@@ -177,9 +169,8 @@ const menu_item_t * temperature_info_wrapper(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * pwm_maunal_ctr_wrapper(const menu_item_t * item)
+static const menu_item_t *pwm_maunal_ctr_wrapper(const menu_item_t *item)
 {
-
     force_redraw = true;
     return item;
 }
@@ -189,7 +180,7 @@ const menu_item_t * pwm_maunal_ctr_wrapper(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * start_reflow_prof1(const menu_item_t * item)
+static const menu_item_t *start_reflow_prof1(const menu_item_t *item)
 {
     menu_drawer.clrscr();
     extern void start_reflow(uint8_t np);
@@ -203,7 +194,7 @@ const menu_item_t * start_reflow_prof1(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * start_reflow_prof2(const menu_item_t * item)
+static const menu_item_t *start_reflow_prof2(const menu_item_t *item)
 {
     menu_drawer.clrscr();
     extern void start_reflow(uint8_t np);
@@ -217,7 +208,7 @@ const menu_item_t * start_reflow_prof2(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * start_door_cal(const menu_item_t * item)
+static const menu_item_t *start_door_cal(const menu_item_t *item)
 {
     menu_drawer.clrscr();
     extern ErrorStatus door_servo_calibrate(void);
@@ -232,7 +223,7 @@ const menu_item_t * start_door_cal(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * close_door(const menu_item_t * item)
+static const menu_item_t *close_door(const menu_item_t *item)
 {
     menu_drawer.clrscr();
     extern void door_servo_close_door(void);
@@ -246,7 +237,7 @@ const menu_item_t * close_door(const menu_item_t * item)
  * @param item
  * @return
  */
-const menu_item_t * open_door(const menu_item_t * item)
+static const menu_item_t *open_door(const menu_item_t *item)
 {
     menu_drawer.clrscr();
     extern void door_servo_open_door(void);
@@ -255,138 +246,134 @@ const menu_item_t * open_door(const menu_item_t * item)
     return item->parent;
 }
 
-
 /* root menu */
-const menu_item_t L0_h;
-const menu_item_t L0_i0;
-const menu_item_t L0_i1;
-const menu_item_t L0_i2;
-const menu_item_t L0_i3;
-const menu_item_t L0_i4;
-#if(0)
-const menu_item_t L0_i5;
+//menu_item_t L0_h;
+extern const menu_item_t L0_i0;
+extern const menu_item_t L0_i1;
+extern const menu_item_t L0_i2;
+extern const menu_item_t L0_i3;
+extern const menu_item_t L0_i4;
+#if (0)
+extern const menu_item_t L0_i5;
 #endif
-const menu_item_t L0_i6;
+extern const menu_item_t L0_i6;
 
 /* iformation menu */
 
-
 /* calibrate menu */
-const menu_item_t calibr_back;
-const menu_item_t calibr_tc1;
-const menu_item_t calibr_tc2;
-const menu_item_t calibr_actuator;
-const menu_item_t calibr_heater;
-const menu_item_t manual_heater;
+//menu_item_t calibr_back;
+extern const menu_item_t calibr_tc1;
+extern const menu_item_t calibr_tc2;
+extern const menu_item_t calibr_actuator;
+extern const menu_item_t calibr_heater;
+extern const menu_item_t manual_heater;
 
 /* reflow */
-const menu_item_t reflow_back;
+extern const menu_item_t reflow_back;
 
-menu_item_t reflow1;
+extern menu_item_t reflow1;
 
-menu_item_t reflow2;
-const menu_item_t reflow_test_prof;
-
+extern menu_item_t       reflow2;
+extern const menu_item_t reflow_test_prof;
 
 /* ROOT MENU HEADER */
-const menu_item_t L0_h = {
-    .key_up_action = NULL,
-    .key_dn_action = NULL,
-    .key_esc_action = NULL,
+static const menu_item_t L0_h = {
+    .key_up_action    = NULL,
+    .key_dn_action    = NULL,
+    .key_esc_action   = NULL,
     .key_enter_action = NULL,
 
     .menu_string = "    MAIN MENU   ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &L0_i0, /* next item at this level */
-    .prev = &L0_h, /* prev item at this level */
+    .parent = NULL,   /* parent node */
+    .child  = NULL,   /* child node */
+    .next   = &L0_i0, /* next item at this level */
+    .prev   = &L0_h,  /* prev item at this level */
 
     .item_type = MENU_ITEM_HEADER,
 };
 
-
 /* INFO MENU ITEM */
 const menu_item_t L0_i0 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = temperature_info_wrapper,
 
     .menu_string = "INFORMATION     ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &L0_i1, /* next item at this level */
-    .prev = &L0_h, /* prev item at this level */
+    .parent = NULL,   /* parent node */
+    .child  = NULL,   /* child node */
+    .next   = &L0_i1, /* next item at this level */
+    .prev   = &L0_h,  /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* CALIBRATE MENU ITEM */
 const menu_item_t L0_i1 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = go_to_child,
 
     .menu_string = "CALIBRATE       ",
 
-    .parent = NULL, /* parent node */
-    .child = &calibr_tc1,  /* child node */
-    .next = &L0_i2, /* next item at this level */
-    .prev = &L0_i0, /* prev item at this level */
+    .parent = NULL,        /* parent node */
+    .child  = &calibr_tc1, /* child node */
+    .next   = &L0_i2,      /* next item at this level */
+    .prev   = &L0_i0,      /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* OPEN DOOR MENU ITEM */
 const menu_item_t L0_i2 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = open_door,
 
     .menu_string = "OPEN DOOR       ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &L0_i3, /* next item at this level */
-    .prev = &L0_i1, /* prev item at this level */
+    .parent = NULL,   /* parent node */
+    .child  = NULL,   /* child node */
+    .next   = &L0_i3, /* next item at this level */
+    .prev   = &L0_i1, /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* CLOSE DOOR MENU ITEM */
 const menu_item_t L0_i3 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = close_door,
 
     .menu_string = "CLOSE DOOR      ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &L0_i4, /* next item at this level */
-    .prev = &L0_i2, /* prev item at this level */
+    .parent = NULL,   /* parent node */
+    .child  = NULL,   /* child node */
+    .next   = &L0_i4, /* next item at this level */
+    .prev   = &L0_i2, /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* REFLOW WITH PROFILE 1 MENU ITEM */
 const menu_item_t L0_i4 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = go_to_child,
 
     .menu_string = "REFLOW          ",
 
-    .parent = NULL, /* parent node */
-    .child = &reflow_back,  /* child node */
-    .next = &L0_i6, /* next item at this level */
-    .prev = &L0_i3, /* prev item at this level */
+    .parent = NULL,         /* parent node */
+    .child  = &reflow_back, /* child node */
+    .next   = &L0_i6,       /* next item at this level */
+    .prev   = &L0_i3,       /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
@@ -394,215 +381,212 @@ const menu_item_t L0_i4 = {
 #if (0)
 /* REFLOW WITH PROFILE 2 MENU ITEM */
 menu_item_t L0_i5 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = go_to_child,
 
     .menu_string = "REFLOW BY PROF 2",
 
-    .parent = NULL, /* parent node */
-    .child = &reflow2_cancel,  /* child node */
-    .next = &L0_i6, /* next item at this level */
-    .prev = &L0_i4, /* prev item at this level */
+    .parent = NULL,            /* parent node */
+    .child  = &reflow2_cancel, /* child node */
+    .next   = &L0_i6,          /* next item at this level */
+    .prev   = &L0_i4,          /* prev item at this level */
 };
 #endif
 
 /* RESET ALL MENU ITEM */
 const menu_item_t L0_i6 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = NULL,
 
     .menu_string = "RESET SETTINGS  ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &L0_i6, /* next item at this level */
-    .prev = &L0_i4, /* prev item at this level */
+    .parent = NULL,   /* parent node */
+    .child  = NULL,   /* child node */
+    .next   = &L0_i6, /* next item at this level */
+    .prev   = &L0_i4, /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* GO BACK - level up */
-const menu_item_t calibr_back = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+static const menu_item_t calibr_back = {
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = go_to_parent,
 
     .menu_string = "UP ONE LEVEL    ",
 
-    .parent = &L0_i1, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &calibr_tc1, /* next item at this level */
-    .prev = &calibr_back, /* prev item at this level */
+    .parent = &L0_i1,       /* parent node */
+    .child  = NULL,         /* child node */
+    .next   = &calibr_tc1,  /* next item at this level */
+    .prev   = &calibr_back, /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* termocouple 1 */
 const menu_item_t calibr_tc1 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = calibrate_TC1_wrapper,
 
     .menu_string = "THERMOCOUPLE 1  ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &calibr_tc2, /* next item at this level */
-    .prev = &calibr_back, /* prev item at this level */
+    .parent = NULL,         /* parent node */
+    .child  = NULL,         /* child node */
+    .next   = &calibr_tc2,  /* next item at this level */
+    .prev   = &calibr_back, /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* termocouple 2 */
 const menu_item_t calibr_tc2 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = calibrate_TC2_wrapper,
 
     .menu_string = "THERMOCOUPLE 2  ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &calibr_actuator, /* next item at this level */
-    .prev = &calibr_tc1, /* prev item at this level */
+    .parent = NULL,             /* parent node */
+    .child  = NULL,             /* child node */
+    .next   = &calibr_actuator, /* next item at this level */
+    .prev   = &calibr_tc1,      /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* door actuator */
 const menu_item_t calibr_actuator = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = start_door_cal,
 
     .menu_string = "DOOR ACTUATOR   ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &calibr_heater, /* next item at this level */
-    .prev = &calibr_tc2, /* prev item at this level */
+    .parent = NULL,           /* parent node */
+    .child  = NULL,           /* child node */
+    .next   = &calibr_heater, /* next item at this level */
+    .prev   = &calibr_tc2,    /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* heater  */
 const menu_item_t calibr_heater = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = NULL,
 
     .menu_string = "HEATER(S)       ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &manual_heater, /* next item at this level */
-    .prev = &calibr_actuator, /* prev item at this level */
+    .parent = NULL,             /* parent node */
+    .child  = NULL,             /* child node */
+    .next   = &manual_heater,   /* next item at this level */
+    .prev   = &calibr_actuator, /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* manual heater control */
 const menu_item_t manual_heater = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = manual_heater_ctrl,
 
     .menu_string = "MANUAL HEATR CTR",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &manual_heater, /* next item at this level */
-    .prev = &calibr_heater, /* prev item at this level */
+    .parent = NULL,           /* parent node */
+    .child  = NULL,           /* child node */
+    .next   = &manual_heater, /* next item at this level */
+    .prev   = &calibr_heater, /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* REFLOW SECTION */
 const menu_item_t reflow_back = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = go_to_parent,
 
     .menu_string = "UP ONE LEVEL    ",
 
-    .parent = &L0_i4, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &reflow1, /* next item at this level */
-    .prev = &reflow_back, /* prev item at this level */
+    .parent = &L0_i4,       /* parent node */
+    .child  = NULL,         /* child node */
+    .next   = &reflow1,     /* next item at this level */
+    .prev   = &reflow_back, /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
-
 /* reflow profile 1*/
 menu_item_t reflow1 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = start_reflow_prof1,
 
-//	.menu_string = "START REFLOW PR1",
+    //	.menu_string = "START REFLOW PR1",
     .menu_string = NULL,
 
-    .parent = &L0_i4, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &reflow2, /* next item at this level */
-    .prev = &reflow_back, /* prev item at this level */
+    .parent = &L0_i4,       /* parent node */
+    .child  = NULL,         /* child node */
+    .next   = &reflow2,     /* next item at this level */
+    .prev   = &reflow_back, /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* reflow profile 2*/
 menu_item_t reflow2 = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = start_reflow_prof2,
 
-//	.menu_string = "START REFLOW PR2",
+    //	.menu_string = "START REFLOW PR2",
     .menu_string = NULL,
 
-    .parent = &L0_i4, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &reflow_test_prof, /* next item at this level */
-    .prev = &reflow1, /* prev item at this level */
+    .parent = &L0_i4,            /* parent node */
+    .child  = NULL,              /* child node */
+    .next   = &reflow_test_prof, /* next item at this level */
+    .prev   = &reflow1,          /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 };
 
 /* reflow reflow_test_profiles */
 const menu_item_t reflow_test_prof = {
-    .key_up_action = up_action,
-    .key_dn_action = dn_action,
-    .key_esc_action = NULL,
+    .key_up_action    = up_action,
+    .key_dn_action    = dn_action,
+    .key_esc_action   = NULL,
     .key_enter_action = test_profiles,
 
     .menu_string = "TEST PROFILES   ",
 
-    .parent = NULL, /* parent node */
-    .child = NULL,  /* child node */
-    .next = &reflow_test_prof, /* next item at this level */
-    .prev = &reflow2, /* prev item at this level */
+    .parent = NULL,              /* parent node */
+    .child  = NULL,              /* child node */
+    .next   = &reflow_test_prof, /* next item at this level */
+    .prev   = &reflow2,          /* prev item at this level */
 
     .item_type = MENU_ITEM_ACTIVE,
 
 };
 
-
-
 /* current selected item */
-const menu_item_t * current_item;
+const menu_item_t *current_item;
 
 /**
  * @brief init_menu_system
@@ -613,17 +597,16 @@ ErrorStatus init_menu_system(out_device_t drawer)
 {
     ErrorStatus retVal = ERROR;
 
-    if ((drawer.clrscr != NULL) && (drawer.xfunc_print != NULL) &&
-        (drawer.set_position != NULL)) {
-        menu_drawer.clrscr = drawer.clrscr;
-        menu_drawer.xfunc_print = drawer.xfunc_print;
+    if ((drawer.clrscr != NULL) && (drawer.xfunc_print != NULL) && (drawer.set_position != NULL)) {
+        menu_drawer.clrscr       = drawer.clrscr;
+        menu_drawer.xfunc_print  = drawer.xfunc_print;
         menu_drawer.set_position = drawer.set_position;
-        retVal = SUCCESS;
+        retVal                   = SUCCESS;
     }
 
     /* set-up dynamic names in the menu(s) */
-    reflow1.menu_string = (char*)&prof1->name;
-    reflow2.menu_string = (char*)&prof2->name;
+    reflow1.menu_string = (const char *)&prof1->name;
+    reflow2.menu_string = (const char *)&prof2->name;
 
     return retVal;
 }
@@ -634,11 +617,17 @@ ErrorStatus init_menu_system(out_device_t drawer)
  */
 void draw_menu_level(const menu_item_t *item)
 {
+
     if (item == NULL) {
-        goto fExit;
+       return;
     }
 
-    static const menu_item_t * last_current = NULL;
+    const menu_item_t *prev = item->prev;
+    const menu_item_t *next = prev;
+    const menu_item_t *draw_item = prev;
+    size_t i_start = 0U;
+
+    static const menu_item_t *last_current = NULL;
 
     if ((last_current == item) && (!force_redraw)) {
         /* nothing to do */
@@ -648,7 +637,7 @@ void draw_menu_level(const menu_item_t *item)
     size_t number_of_items;
     /* go to the first item */
 
-    const menu_item_t *prev = item->prev;
+
     while (true) {
         if (prev == prev->prev) {
             break;
@@ -657,8 +646,8 @@ void draw_menu_level(const menu_item_t *item)
     }
 
     /* count items */
-    const menu_item_t *next = prev;
-    number_of_items = 1U;
+
+    number_of_items         = 1U;
     while (true) {
         if (next == next->next) {
             break;
@@ -672,10 +661,10 @@ void draw_menu_level(const menu_item_t *item)
     menu_drawer.clrscr();
     menu_drawer.set_position(0U, 0U);
 
-    const menu_item_t *draw_item = prev;
 
-    size_t i_start = 0U;
-    if(draw_item->item_type == MENU_ITEM_HEADER) {
+
+
+    if (draw_item->item_type == MENU_ITEM_HEADER) {
         menu_drawer.xfunc_print(draw_item->menu_string, INVERT);
         i_start++;
         draw_item = draw_item->next;
@@ -684,7 +673,7 @@ void draw_menu_level(const menu_item_t *item)
     for (size_t i = i_start; i < number_of_items; i++) {
         uint8_t mode;
         if (draw_item == item) {
-            mode = INVERT;
+            mode         = INVERT;
             last_current = draw_item;
         } else {
             mode = NORM;
@@ -740,6 +729,15 @@ void process_current_item(void)
         break;
     }
 
+    case DN_KEY_PRESSED:
+    case ENTER_KEY_PRESSED:
+    case ESC_KEY_PRESSED:
+    case KEY1_PRESSED:
+    case KEY2_PRESSED:
+    case UP_KEY_PRESSED:
+    case KEY1_RELEASED:
+    case KEY2_RELEASED:
+    case NO_KEY:
     default: {
         break;
     }

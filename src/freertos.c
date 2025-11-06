@@ -153,8 +153,8 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_MUTEX */
 
-	osMutexStaticDef(xfunc_outMutex, &xfunc_outMutex_ControlBlock);
-	xfunc_outMutexHandle = osMutexCreate(osMutex(xfunc_outMutex));
+    osMutexStaticDef(xfunc_outMutex, &xfunc_outMutex_ControlBlock);
+    xfunc_outMutexHandle = osMutexCreate(osMutex(xfunc_outMutex));
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -211,6 +211,7 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
 
+    UNUSED(argument);
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   for(;;)
@@ -227,8 +228,8 @@ void StartDefaultTask(void const * argument)
 */
 void __attribute__((noreturn)) Start_kbd_task(void const * argument)
 {
-	kbd_task_init();
-	(void)argument;
+    kbd_task_init();
+    (void)argument;
   for(;;)
   {
     kbd_task_run();
@@ -276,6 +277,7 @@ void __attribute__((noreturn)) Start_comm_task(void const * argument)
 /* USER CODE END Header_Start_temperatur_task */
 void Start_temperatur_task(void const * argument)
 {
+    UNUSED(argument);
   /* USER CODE BEGIN Start_temperatur_task */
   /* Infinite loop */
   for(;;)
@@ -293,11 +295,11 @@ void Start_temperatur_task(void const * argument)
 void __attribute__((noreturn)) Start_ui_task(void const * argument)
 {
   ui_task_init();
-  (void)argument;
+  UNUSED(argument);
 
   for(;;)
   {
-	ui_task_run();
+    ui_task_run();
   }
 }
 

@@ -53,6 +53,7 @@ def main():
     total_files = 0
     groups = []
     with open(output_file, "w", encoding="utf-8") as f:
+        f.write("message(STATUS \"Processing ${CMAKE_CURRENT_LIST_FILE}...\")\n")
         for folder, files in sorted(files_by_folder.items()):
             folder_display = f"{grouped_name_upper}" if folder == "." else folder
             folder_display = folder_display.upper()

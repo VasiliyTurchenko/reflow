@@ -8,121 +8,18 @@ set(CMAKE_C_STANDARD 17)
 project(REFLOW LANGUAGES C CXX ASM)
 
 message(STATUS "\nProcessing ${CMAKE_CURRENT_LIST_FILE}...")
-message(STATUS "CMAKE_SYSROOT =  ${CMAKE_SYSROOT}")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -v")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
+set(CMAKE_COLOR_DIAGNOSTICS ON)
+
+option(ENABLE_CUSTOM_COMPILER_FLAGS "Enables custom compiler flags" ON)
+option(ENABLE_SANITIZERS "Enables AddressSanitizer and UndefinedBehaviorSanitizer." OFF)
 
 include(CheckCCompilerFlag)
-option(ENABLE_CUSTOM_COMPILER_FLAGS "Enables custom compiler flags" ON)
-if(ENABLE_CUSTOM_COMPILER_FLAGS)
-    if(("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang") OR ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU"))
-        list(
-            APPEND
-            custom_compiler_flags_c
-            # -std=c89
-            -pedantic
-            -Wall
-            -Wextra
-            # -Werror
-            -Wstrict-prototypes
-            -Wwrite-strings
-            -Wshadow
-            -Winit-self
-            -Wcast-align
-            -Wformat=2
-            -Wmissing-prototypes
-            -Wstrict-overflow=2
-            -Wcast-qual
-            -Wundef
-            -Wswitch-default
-            -Wconversion
-            -Wc++-compat
-            # -fstack-protector-strong
-            -Wcomma
-            -Wdouble-promotion
-            -Wparentheses
-            -Wformat-overflow
-            -Wunused-macros
-            -Wmissing-variable-declarations
-            -Wused-but-marked-unused
-            -Wswitch-enum)
-        list(
-            APPEND
-            custom_compiler_flags_cxx
-            # -std=c89
-            -pedantic
-            -Wall
-            -Wextra
-            # -Werror
-            -Wwrite-strings
-            -Wshadow
-            -Winit-self
-            -Wcast-align
-            -Wformat=2
-            -Wstrict-overflow=2
-            -Wcast-qual
-            -Wundef
-            -Wswitch-default
-            -Wconversion
-            -fstack-protector-strong
-            -Wcomma
-            -Wdouble-promotion
-            -Wparentheses
-            -Wformat-overflow
-            -Wunused-macros
-            -Wmissing-variable-declarations
-            -Wused-but-marked-unused
-            -Wswitch-enum)
+include(StrictCompileFlags)
 
-        # elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC") # Disable warning c4001 - nonstandard
-        # extension 'single line comment' was used # Define _CRT_SECURE_NO_WARNINGS to disable
-        # deprecation warnings for "insecure" C library functions list(APPEND custom_compiler_flags
-        # /GS /Za /sdl /W4 /wd4001 /D_CRT_SECURE_NO_WARNINGS )
-    endif()
-endif()
-
-option(ENABLE_SANITIZERS "Enables AddressSanitizer and UndefinedBehaviorSanitizer." OFF)
-if(ENABLE_SANITIZERS)
-    list(
-        APPEND
-        custom_compiler_flags_c
-        -fno-omit-frame-pointer
-        -fsanitize=address
-        -fsanitize=undefined
-        -fsanitize=float-cast-overflow
-        -fsanitize-address-use-after-scope
-        -fsanitize=integer
-        -01
-        -fno-sanitize-recover)
-endif()
-
-# apply custom compiler flags
-foreach(compiler_flag ${custom_compiler_flags_c})
-    # remove problematic characters
-    string(REGEX REPLACE "[^a-zA-Z0-9]" "" current_variable ${compiler_flag})
-
-    check_c_compiler_flag(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
-    if(FLAG_SUPPORTED_${current_variable})
-        list(APPEND supported_compiler_flags)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${compiler_flag}")
-    endif()
-endforeach()
-
-# apply custom compiler flags
-foreach(compiler_flag ${custom_compiler_flags_cxx})
-    # remove problematic characters
-    string(REGEX REPLACE "[^a-zA-Z0-9]" "" current_variable ${compiler_flag})
-    # TODO FIX ME
-    check_c_compiler_flag(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
-    if(FLAG_SUPPORTED_${current_variable})
-        list(APPEND supported_compiler_flags_cxx)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${compiler_flag}")
-    endif()
-endforeach()
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${supported_compiler_flags} -v")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${supported_compiler_flags_cxx} -v")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -v")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -v")
 
 set(UNITTEST_TARGET_PREFIX unit_test_)
 
@@ -137,18 +34,19 @@ set(BUILDINFO_PATH
     CACHE INTERNAL "")
 message(STATUS "BUILDINFO_PATH = ${BUILDINFO_PATH}")
 
-add_custom_command(
-    OUTPUT ${BUILDINFO_PATH}/buildinfo.h
-    COMMAND rm -f ${BUILDINFO_PATH}/buildinfo.h && git rev-parse --short=8 HEAD | xargs python3
-            scripts/gen_info.py > buildinfo.h
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    VERBATIM)
+include(BuildInfo)
 
-add_custom_target(gen_buildinfo ALL DEPENDS ${BUILDINFO_PATH}/buildinfo.h)
-
-include_directories(${BUILDINFO_PATH})
+message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
+message(STATUS "CMAKE_HOST_SYSTEM_NAME = ${CMAKE_HOST_SYSTEM_NAME}")
+message(STATUS "CMAKE_TOOLCHAIN_FILE = " ${CMAKE_TOOLCHAIN_FILE})
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
+message(STATUS "CMAKE_SYSROOT =  ${CMAKE_SYSROOT}")
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME)
+    message(STATUS "Cross-compiling...")
+
+    include(MCUSelector)
+
     # PC-Lint function INCLUDE_LINT variable is set/reset by the command line option for cmake
     if(${INCLUDE_LINT})
         if(EXISTS ${TOOLCHAIN_PREFIX}/pc-lint2.cmake)
@@ -159,35 +57,17 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME)
     # comment it out, if not needed
     add_definitions(-DMCU_TARGET)
 
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/target/mcu)
+    # Start including targets here:
+    set(mcu "stm32f103c8t6")
+    set(board "st_smart_v2")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
+    unset(MCU)
+    unset(BOARD)
 
-    message(STATUS "CMAKE_TOOLCHAIN_FILE = " ${CMAKE_TOOLCHAIN_FILE})
-    message(STATUS "CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
-
-    # PC-Lint target
-    if(COMMAND add_pc_lint)
-        # establish list of compile defifntiond
-        set(comp_defs_list)
-        list(APPEND comp_defs_list ${D_MCU})
-        list(APPEND comp_defs_list ${D_MCU_EXACT})
-        list(APPEND comp_defs_list ${D_HSE_VAL})
-
-        # fantastic loop
-        foreach(s IN LISTS ${EXEC_NAME}_LIST_OF_SOURCES)
-
-            set(t_name)
-            string(REPLACE "/" "_" t_name ${s})
-
-            add_pc_lint(
-                # compile defines
-                "${comp_defs_list}"
-                # target
-                ${t_name} ${EXEC_NAME} ${s})
-        endforeach()
-    endif(COMMAND add_pc_lint)
+    # another target here set(MCU xxxx) set(BOARD yyyyy)
+    # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src) unset(MCU) unset(BOARD)
 
 else()
-
     message("Non-MCU target detected")
 
     # add host target cmake file - for tests on the host

@@ -328,7 +328,7 @@ uint8_t fast_clear_screen(void)
  * @param mode
  * @return
  */
-uint32_t zprint(/*const*/ char *sz, uint8_t mode)
+uint32_t zprint(const char *sz, uint8_t mode)
 {
     uint8_t dx;
     uint8_t dy;
