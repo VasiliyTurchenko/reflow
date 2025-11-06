@@ -15,14 +15,6 @@ extern "C" {
 
 #include <stdint.h>
 #include <stddef.h>
-#include <limits.h>
-
-#ifdef STM32F103xB
-#include "stm32f1xx.h"
-#else
-#error MCU NOT DEFINED
-#endif
-
 
 void sys_helpers_delay_ms(uint32_t ms);
 void sys_helpers_delay_ms_and_reboot(uint32_t ms);

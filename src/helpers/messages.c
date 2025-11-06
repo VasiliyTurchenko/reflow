@@ -14,10 +14,10 @@
 //static char * started = " started.\n";
 
 //char *params_load = " parameters load";
-char *params_loaded = " parameters loaded";
-char *params_not_loaded = " parameters loading error";
+const char *params_loaded = " parameters loaded";
+const char *params_not_loaded = " parameters loading error";
 
-char *error_saving = "Error saving config file";
+const char *error_saving = "Error saving config file";
 //char *cfg_file = " cfg file.\n";
 
 

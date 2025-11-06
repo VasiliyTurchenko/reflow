@@ -15,11 +15,11 @@
 #include "logging.h"
 #include "main.h"
 
-#ifdef STM32F103xB
-#include "stm32f1xx.h"
-#else
-#error MCU NOT DEFINED
-#endif
+// #ifdef STM32F103xB
+// #include "stm32f1xx.h"
+// #else
+// #error MCU NOT DEFINED
+// #endif
 
 #define KBD_WIN_SIZE 10U
 
@@ -93,11 +93,11 @@ static uint16_t read_column(KeyMatrixRuntime_t *kmr)
             uint8_t pt = (GPIO_PIN_RESET == HAL_GPIO_ReadPin(km->col_ports[i], km->col_pins[i])) ?
                                  1U :
                                  0U;
-            pt         = pt << i;
+            pt         = (uint8_t)(pt << i);
             retVal     = retVal | (uint16_t)pt;
         }
     }
-    return retVal << (kmr->current_row * km->n_cols);
+    return (uint16_t)(retVal << (kmr->current_row * km->n_cols));
 }
 
 static const KeyMatrix_t key_matrix = { .n_rows        = N_ROWS,
@@ -131,8 +131,8 @@ static uint8_t key_up_state    = 0U;
 static uint8_t key_dn_state    = 0U;
 static uint8_t key_enter_state = 0U;
 static uint8_t key_esc_state   = 0U;
-static uint8_t key_1_state     = 0U;
-static uint8_t key_2_state     = 0U;
+// static uint8_t key_1_state     = 0U;
+// static uint8_t key_2_state     = 0U;
 
 static key_code_t last_key_event = NO_KEY;
 
@@ -240,7 +240,7 @@ void kbd_task_init(void)
 
     uint16_t clr_mask = 0U;
     for (uint8_t i = 0U; i < key_matrix_runtime.km->n_cols; i++) {
-        clr_mask = clr_mask | (1U << i);
+        clr_mask = (uint16_t)(clr_mask | (1U << i));
     }
     key_matrix_runtime.clear_mask = clr_mask;
     key_matrix_runtime.km->drop_next_row(&key_matrix_runtime);
@@ -287,8 +287,8 @@ void kbd_task_run(void)
             uint8_t key_dn_cnt    = 0U;
             uint8_t key_enter_cnt = 0U;
             uint8_t key_esc_cnt   = 0U;
-            uint8_t key_1_cnt     = 0U;
-            uint8_t key_2_cnt     = 0U;
+            // uint8_t key_1_cnt     = 0U;
+            // uint8_t key_2_cnt     = 0U;
 
             for (size_t i = 0U; i < KBD_WIN_SIZE; i++) {
                 /* count ones */

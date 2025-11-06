@@ -49,7 +49,7 @@ uint8_t CRT_whereY(void);
 static inline void CRT_clearScreen(void)
 {
 //	ESC [ 2 J
-	xputs("\033[2J");
+    xputs("\033[2J");
 }
 
 /**
@@ -57,30 +57,30 @@ static inline void CRT_clearScreen(void)
  */
 static inline void CRT_resetToDefaults(void)
 {
-	xputs("\033[39;49m");
+    xputs("\033[39;49m");
 }
 
 static inline void CRT_resetAllAttr(void)
 {
-	xputs("\033[0m");
+    xputs("\033[0m");
 }
 
 // move cursor to UL corner
 static inline void CRT_cursorHome(void)
 {
-	xputs("\033[0;0f");
+    xputs("\033[0;0f");
 }
 
 // clear all from current position to end of the linr
-static inline void CRT_clrEOL()
+static inline void CRT_clrEOL(void)
 {
-	xputs("\033[K");
+    xputs("\033[K");
 }
 
 // bells :)
-static inline void CRT_bell()
+static inline void CRT_bell(void)
 {
-	xputc((char)0x07);
+    xputc((char)0x07);
 }
 
 #endif /* MYCRT_H */

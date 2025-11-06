@@ -6,16 +6,16 @@
  *
  */
 
+#include "FreeRTOS.h"
+#include "task.h"
+#include "cmsis_os.h"
+
 #include "watchdog.h"
 #include "iwdg.h"
 #include "rtc.h"
-#include "logging.h"
 
-
-
-static uint32_t		magic_bits = 0x00U;
-static uint32_t		magic_mask = 0x00U;
-
+static uint32_t magic_bits = 0x00U;
+static uint32_t magic_mask = 0x00U;
 
 void start_iwdt(const TickType_t timeout);
 
@@ -26,25 +26,25 @@ void start_iwdt(const TickType_t timeout);
  */
 void i_am_alive(const uint32_t magic)
 {
+    if ((magic == 0U) || (magic > 31U)) {
+        return;
+    } /* bad magic */
+    if ((magic_bits & (0x01U << magic)) == 0U) {
+        return;
+    } /* magic isn't registered */
+    taskENTER_CRITICAL();
+    magic_bits &= ~(0x01U << magic); /* reset the bit corresponding the caller task */
+                                     // 04-04-2018
+    /* save magic_bits to backup domain */
+    HAL_RTCEx_BKUPWrite(&hrtc, WDT_REG, magic_bits);
 
-	if ((magic == 0U) || (magic > 31U)) {return;}		/* bad magic */
-	if ((magic_bits & (0x01U << magic)) == 0U) {return;}	/* magic isn't registered */
-	taskENTER_CRITICAL();
-	magic_bits &= ~(0x01U << magic);		/* reset the bit corresponding the caller task */
-// 04-04-2018
-	/* save magic_bits to backup domain */
-	HAL_RTCEx_BKUPWrite(&hrtc, WDT_REG, magic_bits);
+    if (magic_bits == 0U) {
+        //		log_xputs(MSG_LEVEL_EXT_INF, "IWDG reloaded.");
 
-	if (magic_bits == 0U) {
-
-//		log_xputs(MSG_LEVEL_EXT_INF, "IWDG reloaded.");
-
-		HAL_IWDG_Refresh(&hiwdg);		/* reload iwdt */
-		magic_bits = magic_mask;
-	}
-	taskEXIT_CRITICAL();
-
-
+        HAL_IWDG_Refresh(&hiwdg); /* reload iwdt */
+        magic_bits = magic_mask;
+    }
+    taskEXIT_CRITICAL();
 }
 
 /**
@@ -54,11 +54,13 @@ void i_am_alive(const uint32_t magic)
  */
 void register_magic(const uint32_t magic_pos)
 {
-	if ((magic_pos == 0U) || (magic_pos > 31U)) {return;}	/* bad magic position */
-	taskENTER_CRITICAL();
-	magic_mask |= (0x01U << magic_pos);			/* set the bit corresponding the caller task */
-	magic_bits = magic_mask;
-	taskEXIT_CRITICAL();
+    if ((magic_pos == 0U) || (magic_pos > 31U)) {
+        return;
+    } /* bad magic position */
+    taskENTER_CRITICAL();
+    magic_mask |= (0x01U << magic_pos); /* set the bit corresponding the caller task */
+    magic_bits = magic_mask;
+    taskEXIT_CRITICAL();
 }
 
 /**
@@ -68,9 +70,7 @@ void register_magic(const uint32_t magic_pos)
  */
 void start_iwdt(const TickType_t timeout)
 {
-	/* ... */
+    /* ... */
 
-	magic_bits = magic_mask;
+    magic_bits = magic_mask;
 }
-
-

@@ -101,7 +101,7 @@ static inline void bottom_heater_on(void)
 /**
  * @brief reset_controls
  */
-void reset_controls(void)
+static void reset_controls(void)
 {
     control_cycle_number                       = 0U;
     half_period_number                         = 0U;

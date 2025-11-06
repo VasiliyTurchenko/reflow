@@ -13,7 +13,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "rtc.h"
 
 //#include "rtc_magics.h"
 
@@ -210,11 +209,11 @@ static void eeprom_crc32_check(void)
         new_crc = crc32_over_eeprom();
 
         /* save new CRC32 to the EEPROM */
-        uint8_t *tmp = (uint8_t *)&new_crc;
+        uint8_t *tmp1 = (uint8_t *)&new_crc;
         for (size_t i = 0U; i < sizeof(uint32_t); i++) {
             uint32_t addr_to = at24c04.eeprom_size - sizeof(uint32_t) + i;
 
-            if (Write_Byte_I2C_EEPROM(&tmp[i], addr_to, &at24c04) != SUCCESS) {
+            if (Write_Byte_I2C_EEPROM(&tmp1[i], addr_to, &at24c04) != SUCCESS) {
                 log_xputs(MSG_LEVEL_FATAL, "I2C EEPROM write error!");
                 HAL_Delay(500U);
                 NVIC_SystemReset();
