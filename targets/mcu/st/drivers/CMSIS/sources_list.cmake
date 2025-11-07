@@ -5,20 +5,20 @@ SET(GROUP_DEVICE_ST_STM32F1XX_INCLUDE_SRC
 ) # of GROUP_DEVICE_ST_STM32F1XX_INCLUDE_SRC
 
 SET(GROUP_INCLUDE_SRC
-	${CMAKE_CURRENT_LIST_DIR}/Include/arm_common_tables.h
-	${CMAKE_CURRENT_LIST_DIR}/Include/arm_const_structs.h
-	${CMAKE_CURRENT_LIST_DIR}/Include/arm_math.h
+#	${CMAKE_CURRENT_LIST_DIR}/Include/arm_common_tables.h
+#	${CMAKE_CURRENT_LIST_DIR}/Include/arm_const_structs.h
+#	${CMAKE_CURRENT_LIST_DIR}/Include/arm_math.h
 	${CMAKE_CURRENT_LIST_DIR}/Include/cmsis_armcc.h
-	${CMAKE_CURRENT_LIST_DIR}/Include/cmsis_armcc_V6.h
+#	${CMAKE_CURRENT_LIST_DIR}/Include/cmsis_armcc_V6.h
 	${CMAKE_CURRENT_LIST_DIR}/Include/cmsis_gcc.h
 	${CMAKE_CURRENT_LIST_DIR}/Include/core_cm0.h
 	${CMAKE_CURRENT_LIST_DIR}/Include/core_cm0plus.h
 	${CMAKE_CURRENT_LIST_DIR}/Include/core_cm3.h
 	${CMAKE_CURRENT_LIST_DIR}/Include/core_cm4.h
 	${CMAKE_CURRENT_LIST_DIR}/Include/core_cm7.h
-	${CMAKE_CURRENT_LIST_DIR}/Include/core_cmFunc.h
-	${CMAKE_CURRENT_LIST_DIR}/Include/core_cmInstr.h
-	${CMAKE_CURRENT_LIST_DIR}/Include/core_cmSimd.h
+#	${CMAKE_CURRENT_LIST_DIR}/Include/core_cmFunc.h
+#	${CMAKE_CURRENT_LIST_DIR}/Include/core_cmInstr.h
+#	${CMAKE_CURRENT_LIST_DIR}/Include/core_cmSimd.h
 	${CMAKE_CURRENT_LIST_DIR}/Include/core_sc000.h
 	${CMAKE_CURRENT_LIST_DIR}/Include/core_sc300.h
 ) # of GROUP_INCLUDE_SRC

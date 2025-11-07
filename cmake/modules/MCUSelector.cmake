@@ -10,7 +10,7 @@ function(GET_MCU_CMAKELISTS mcu_string)
         "stm32f3\\;st/drivers/CMSIS\\;st/drivers/STM32F3xx_HAL_Driver\\;-mcpu=cortex-m3 -mthumb -mfloat-abi=soft -mno-thumb-interwork\\;USE_FULL_LL_DRIVER USE_HAL_DRIVER STM32F303CXX STM32F303C8T6 STM32F303xB"
         "stm32f4\\;st/drivers/CMSIS\\;st/drivers/STM32F4xx_HAL_Driver\\;-mcpu=cortex-m3 -mthumb -mfloat-abi=soft -mno-thumb-interwork\\;USE_FULL_LL_DRIVER USE_HAL_DRIVER STM32F303CXX STM32F303C8T6 STM32F303xB"
         "stm32f7\\;st/drivers/CMSIS\\;st/drivers/STM32F7xx_HAL_Driver\\;-mcpu=cortex-m3 -mthumb -mfloat-abi=soft -mno-thumb-interwork\\;USE_FULL_LL_DRIVER USE_HAL_DRIVER STM32F303CXX STM32F303C8T6 STM32F303xB"
-        "stm32f1\\;st/drivers/CMSIS\\;st/drivers/STM32F1xx_HAL_Driver\\;-mcpu=cortex-m3 -mthumb -mfloat-abi=soft -mno-thumb-interwork\\;USE_FULL_LL_DRIVER USE_HAL_DRIVER STM32F103CXX STM32F103C8T6 STM32F103xB"
+        "stm32f1\\;st/drivers/CMSIS\\;st/drivers/STM32F1xx_HAL_Driver\\;-mcpu=cortex-m3 -mthumb -mfloat-abi=soft -mno-thumb-interwork --specs=nano.specs\\;USE_FULL_LL_DRIVER USE_HAL_DRIVER STM32F103CXX STM32F103C8T6 STM32F103xB"
     )
 
     set(found FALSE)
