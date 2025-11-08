@@ -18,9 +18,9 @@
  */
 void comm_task_init(void)
 {
-	register_magic(COMM_TASK_MAGIC);
+    register_magic(COMM_TASK_MAGIC);
 //	i_am_alive(COMM_TASK_MAGIC);
-	log_xputs(MSG_LEVEL_INFO, " started.");
+    log_xputs(MSG_LEVEL_INFO, " started.");
 }
 
 /**
@@ -28,7 +28,7 @@ void comm_task_init(void)
  */
 void comm_task_run(void)
 {
-	(void)Transmit_RTOS(NULL);
+    (void)Transmit_RTOS();
 //	i_am_alive(COMM_TASK_MAGIC);
-	vTaskDelay(pdMS_TO_TICKS(Comm_Task_Period()));
+    vTaskDelay(pdMS_TO_TICKS(10U));
 }

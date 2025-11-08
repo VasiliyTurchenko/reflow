@@ -12,7 +12,7 @@
 #include "door_servo.h"
 #include "framebuffer.h"
 #include "logging.h"
-#include "sys_helpers.h"
+#include "platform_time_util.h"
 #include "hex_gen.h"
 
 static door_pwm_cal_data_t *door_pwm_cal = NULL;

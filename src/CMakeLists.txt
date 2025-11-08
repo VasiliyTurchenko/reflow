@@ -43,10 +43,18 @@ set(EXEC_NAME ${TARGET_NAME})
 add_executable(${EXEC_NAME})
 
 # ---- MCU-agnostic definitions ----
-set(COMMON_DEFS USE_FRAMEBUFFER USE_FULL_ASSERT NO_LAN TARGET_NAME=${TARGET_NAME})
+set(COMMON_DEFS
+    USE_FRAMEBUFFER
+    USE_FreeRTOS
+    WITH_RTOS
+    USE_FULL_ASSERT
+    NO_LAN
+    TARGET_NAME=${TARGET_NAME}
+    DEBUG_USART=1)
 
 target_compile_definitions(${EXEC_NAME} PRIVATE ${COMMON_DEFS} ${MCU_COMPILE_DEFS})
 
+target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_COMPILER_LIST})
 target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_SRC_LIST})
 target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_THIRD_PARTY_LIST})
 target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_CMSIS_LIST})
@@ -66,8 +74,9 @@ set(LDSCRIPT ${LINKER_SCRIPTS_DIR}/STM32F103C8Tx_FLASH.ld)
 # ##################################################################################################
 # ##################################################################################################
 
-set(${EXEC_NAME}_LIST_OF_SOURCES ${SRC_SOURCES_LIST} ${THIRD_PARTY_SOURCES_LIST}
-                                 ${CMSIS_SOURCES_LIST} ${STM32F103_SOURCES_LIST})
+set(${EXEC_NAME}_LIST_OF_SOURCES
+    ${SRC_SOURCES_LIST} ${THIRD_PARTY_SOURCES_LIST} ${CMSIS_SOURCES_LIST} ${STM32F103_SOURCES_LIST}
+    ${COMPILER_SOURCES_LIST})
 
 target_sources(${EXEC_NAME} PRIVATE ${${EXEC_NAME}_LIST_OF_SOURCES} ${STARTUP_CODE_SOURCE})
 

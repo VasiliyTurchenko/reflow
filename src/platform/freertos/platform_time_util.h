@@ -1,12 +1,12 @@
-/** @file stm32f1xx_it.h
- *  @brief
+/** @file platform_time_util.f
+ *  @brief platform-dependent time functions
  *
  *  @author turchenkov@gmail.com
  *  @bug
- *  @date 2025-11-08
+ *  @date 30-Sep-2021
  */
-/*! file stm32f1xx_it.h
- * Copyright (c) 2025-11-08 turchenkov@gmail.com
+/*! file platform_time_util.c
+ * Copyright (c) 30-Sep-2021 turchenkov@gmail.com
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction,
  * including without limitation the rights to use, copy, modify, merge, publish, distribute,
@@ -23,35 +23,48 @@
  * OTHER LIABILITY,  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
  * IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-#ifndef STM32F1xx_IT_H
-#define STM32F1xx_IT_H
+#ifndef PLATFORM_TIME_UTIL_H
+#define PLATFORM_TIME_UTIL_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
-void NMI_Handler(void);
-void HardFault_Handler(void);
-void MemManage_Handler(void);
-void BusFault_Handler(void);
-void UsageFault_Handler(void);
-void DebugMon_Handler(void);
-void PVD_IRQHandler(void);
-void DMA1_Channel1_IRQHandler(void);
-void DMA1_Channel4_IRQHandler(void);
-void DMA1_Channel5_IRQHandler(void);
-void ADC1_2_IRQHandler(void);
-void EXTI9_5_IRQHandler(void);
-void TIM1_UP_IRQHandler(void);
-void TIM2_IRQHandler(void);
-void TIM3_IRQHandler(void);
-void I2C1_EV_IRQHandler(void);
-void I2C1_ER_IRQHandler(void);
-void SPI2_IRQHandler(void);
-void USART1_IRQHandler(void);
+#include <stdint.h>
+#include <stddef.h>
+#include "compiler_defs.h"
+
+/* delay without watchdog reloading */
+void sys_helpers_delay_ms(uint32_t ms);
+
+/* reload MCU giving time to get logs printed out  */
+void ATTR_NORETURN sys_helpers_delay_ms_and_reboot(uint32_t ms);
+
+/* long delays with watchdog reload */
+void sys_helpers_delay_ms_wd(uint32_t ms, uint32_t wdt_ms, void (*rld)(void));
+
+/* returns native system milliseconds ticks */
+uint32_t time_now_ms(void);
+
+/* 64-bit version of time_now_ms */
+uint64_t time_now_ms64(void);
+
+/**
+ * @brief update_timeout
+ * @param ts
+ */
+static inline void reset_timeout(uint32_t *ts)
+{
+    uint32_t now = time_now_ms();
+    if (now >= *ts) {
+        *ts = now - *ts;
+    } else {
+        *ts = *ts + 1U + (UINT32_MAX - *ts);
+    }
+}
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STM32F1xx_IT_H */
+#endif /* PLATFORM_TIME_UTIL_H */

@@ -1,77 +1,179 @@
-/**
-  ******************************************************************************
-  * @file    my_comm.c
-  * @author  Vasiliy Turchenko
-  * @brief   my_comm.c
-  * @date    30-12-2017
-  * @modified 20-Jan-2019
-  * @modified 11-Jul-2019
-  * @verbatim
-  ==============================================================================
-		  ##### How to use this driver #####
+/** @file my_comm.c
+ *  @brief
+ *
+ *  @author turchenkov@gmail.com
+ *  @bug
+ * @date    30-12-2017
+ * @modified 20-Jan-2019
+ */
+/*! file my_comm.c
+ * Copyright (c) 2025-11-08 turchenkov@gmail.com
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY,  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+ * IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
-  ==============================================================================
-  * @endverbatim
-  */
-
-#include "cmsis_os.h"
+#include <string.h>
 
 #include "my_comm.h"
-#include "usart.h"
+#include "unused.h"
+#include "platform_time_util.h"
+#include "freertos_exported.h"
+#include "error_handler.h"
 
-#ifndef NO_LAN
- #include "lan.h"
+typedef enum locks {
+    STATE_UNLOCKED = 0,
+    STATE_LOCKED,
+} my_comm_lock_t;
+
+/**
+ * @brief out_stream_t
+ */
+typedef struct out_stream_tag {
+    uni_vect_t init_vect; ///< initial value is kept here
+    uint8_t   *pTxBuf1;   ///< first buffer
+    uint8_t   *pTxBuf2;   ///< second buffer
+    size_t     bufsize;
+    uint8_t   *pActTxBuf;  ///< pointer to the buffer which is used for text output by myxfunc_out()
+    uint8_t   *pXmitTxBuf; ///< pointer to the buffer which is being transmitted out
+    size_t     TxTail;     ///< index of the first free byte in the active buffer
+    volatile my_comm_lock_t
+            ActBufState; ///< this variable is a mutex which locks access to the active buffer
+    volatile my_comm_lock_t
+                  XmitState; ///< this variable is a mutex which locks access to the transmit buffer
+    volatile bool TransmitFuncRunning; ///< flag is set when transmission is on the run
+    size_t        MaxTail;             ///< some statistic
+    volatile ErrorStatus XmitError;
+
+    ostream_sink_functions_t sink_fun;
+    int32_t                  sink_handle;
+
+#ifdef WITH_RTOS
+    /* Tx buffers access mutex */
+    /* defined in freertos.c */
+    osMutexId  xfunc_out_MutexHandle;
+    osThreadId comm_taskHandle;
 #endif
 
-uint8_t TxBuf1[BUFSIZE];
-uint8_t TxBuf2[BUFSIZE];
-volatile void *pActTxBuf;
-volatile void *pXmitTxBuf;
-volatile size_t TxTail;
+} out_stream_t;
 
-//volatile uint8_t ActiveTxBuf;
+/* currently only one stream exists */
+static out_stream_t out_stream;
+/* pointer to the active output stream */
+static out_stream_t *p_act_outstream = NULL;
 
-volatile uint8_t XmitState;
-volatile uint8_t ActBufState;
-volatile bool TransmitFuncRunning;
-
-volatile ErrorStatus XmitError = SUCCESS;
-
-volatile size_t MaxTail = 0U;
-
-/* Tx buffers access mutex */
-/* defined in freertos.c */
-extern osMutexId xfunc_outMutexHandle;
-
-extern osThreadId comm_taskHandle;
+/* complete transmit callback */
+static void o_stream_cb(void *arg);
 
 /******************************** initialisation functions ********************/
 
 /**
-  * @brief InitComm initializes buffers and pointers
-  * @note Non-RTOS function
-  * @param  none
-  * @retval none
-  */
-ErrorStatus InitComm(void)
+ * @brief reset_o_stream
+ * @param o_s
+ */
+static void reset_o_stream(out_stream_t *o_stream)
 {
-	ErrorStatus result;
+    o_stream->TxTail      = 0U;
+    o_stream->MaxTail     = 0U;
+    o_stream->pActTxBuf   = o_stream->pTxBuf1;
+    o_stream->pXmitTxBuf  = o_stream->pTxBuf2;
+    o_stream->ActBufState = STATE_UNLOCKED;
+    o_stream->XmitState   = STATE_UNLOCKED;
+}
 
-	for (size_t i = 0U; i < BUFSIZE; i++) {
-		TxBuf1[i] = 0U;
-		TxBuf2[i] = 0U;
-	}
-	TxTail = 0U;
-	pActTxBuf = &TxBuf1;
-	pXmitTxBuf = &TxBuf2;
-	ActBufState = STATE_UNLOCKED;
-	XmitState = STATE_UNLOCKED;
-	result = SUCCESS;
-	return result;
+static inline _Bool check_fun_list(ostream_sink_functions_t *fl)
+{
+    return ((NULL != fl->deinit_sink) && (NULL != fl->init_sink) && (NULL != fl->send_bytes));
+}
+
+/**
+ * @brief InitComm_impl
+ * @param buffer pointer to the doublebuffer object
+ * @param o_stream pointer to the out_stream_t object
+ * @param fun_list pointer to the sink functions
+ * @param sink_init_params pointer to the sink init parameters
+ * @return ERROR or SUCCESS
+ */
+static ErrorStatus InitComm_impl(uni_vect_t buffer, out_stream_t *o_stream,
+                                 ostream_sink_functions_t *fun_list, void *sink_init_params)
+{
+    ErrorStatus result = ERROR;
+
+    if (NULL == o_stream) {
+        return result;
+    }
+    memset(o_stream, 0, sizeof(*o_stream));
+
+    if ((NULL == fun_list) && (!check_fun_list(fun_list))) {
+        return result;
+    }
+
+    if (!uni_vect_is_valid(&buffer) || (buffer.capacity < 32U)) {
+        return result;
+    }
+    uni_vector_clear(&buffer); ///< already checked
+
+    uint8_t *p0 = &buffer.pdata[0];
+    uint8_t *p1 = &buffer.pdata[buffer.capacity / 2U];
+
+    o_stream->sink_fun  = *fun_list;
+    o_stream->init_vect = buffer;
+    o_stream->pTxBuf1   = p0;
+    o_stream->pTxBuf2   = p1;
+    o_stream->bufsize   = buffer.capacity / 2U;
+
+    o_stream->xfunc_out_MutexHandle = NULL;
+    o_stream->comm_taskHandle       = NULL;
+
+    reset_o_stream(o_stream);
+
+    p_act_outstream = o_stream;
+
+    o_stream->sink_handle =
+            o_stream->sink_fun.init_sink(sink_init_params, o_stream_cb, (void *)o_stream);
+    if (o_stream->sink_handle > 0) {
+        result = SUCCESS;
+    }
+    extern _Bool Transmit_non_RTOS;
+    Transmit_non_RTOS = true;
+    extern void (*xfunc_out)(unsigned char);
+    xfunc_out = myxfunc_out_no_RTOS;
+
+    return result;
+}
+
+/**
+ * @param buffer pointer to the doublebuffer object
+ * @param fun_list pointer to the sink functions
+ * @param sink_init_params pointer to the sink init parameters
+ * @return ERROR or SUCCESS
+ */
+ErrorStatus InitComm(uni_vect_t buffer, ostream_sink_functions_t *fun_list, void *sink_init_params)
+{
+    return InitComm_impl(buffer, &out_stream, fun_list, sink_init_params);
 }
 /* end of the function  InitComm */
 
-/******************************** xfunc_out functions ********************/
+#define ENTER_CRITICAL_SECTION_NO_RTOS()                                                           \
+    do {                                                                                           \
+        uint32_t sreg_temp = __get_PRIMASK();                                                      \
+        __disable_irq();
+#define LEAVE_CRITICAL_SECTION_NO_RTOS()                                                           \
+    __set_PRIMASK(sreg_temp);                                                                      \
+    }                                                                                              \
+    while (0)
 
 /**
  * @brief myxfunc_out_dummy does nothing
@@ -81,7 +183,22 @@ ErrorStatus InitComm(void)
   */
 void myxfunc_out_dummy(unsigned char c)
 {
-	(void)c;
+    (void)c;
+}
+
+/**
+ * @brief add2buf
+ * @param c
+ */
+static inline void add2buf(uint8_t c)
+{
+    if (p_act_outstream->TxTail < p_act_outstream->bufsize) {
+        p_act_outstream->pActTxBuf[p_act_outstream->TxTail] = c;
+        p_act_outstream->TxTail++;
+    }
+    if (p_act_outstream->TxTail > p_act_outstream->MaxTail) {
+        p_act_outstream->MaxTail++;
+    }
 }
 
 /**
@@ -92,17 +209,16 @@ void myxfunc_out_dummy(unsigned char c)
   */
 void myxfunc_out_no_RTOS(unsigned char c)
 {
-	if (ActBufState == STATE_UNLOCKED) {
-		ActBufState = STATE_LOCKED;
-		MaxTail = (TxTail > MaxTail) ? TxTail : MaxTail;
-		if (TxTail < BUFSIZE) {
-			*((uint8_t *)pActTxBuf + TxTail) = c;
-			TxTail++;
-		}
-		ActBufState = STATE_UNLOCKED;
-	}
+    ENTER_CRITICAL_SECTION_NO_RTOS();
+    if (p_act_outstream->ActBufState == STATE_UNLOCKED) {
+        p_act_outstream->ActBufState = STATE_LOCKED;
+        add2buf(c);
+        p_act_outstream->ActBufState = STATE_UNLOCKED;
+    }
+    LEAVE_CRITICAL_SECTION_NO_RTOS();
 }
 
+#ifdef WITH_RTOS
 /**
   * @brief  myxfunc_out_RTOS puts the char to the xmit buffer
   * @note   helper for xprintf
@@ -111,223 +227,250 @@ void myxfunc_out_no_RTOS(unsigned char c)
   */
 void myxfunc_out_RTOS(unsigned char c)
 {
-	while (osMutexWait(xfunc_outMutexHandle, pdMS_TO_TICKS(1U)) != osOK) {
-		//		taskYIELD();
-//		vTaskDelay(pdMS_TO_TICKS(1U));
-	}
-	if (TxTail < BUFSIZE) {
-		MaxTail = (TxTail > MaxTail) ? TxTail : MaxTail;
-		*((uint8_t *)pActTxBuf + TxTail) = c;
-		TxTail++;
-	}
-	osMutexRelease(xfunc_outMutexHandle);
+    while (osMutexWait(p_act_outstream->xfunc_out_MutexHandle, pdMS_TO_TICKS(1U)) != osOK) {
+        /* stub */
+    }
+    add2buf(c);
+    RESULT_UNUSED osMutexRelease(p_act_outstream->xfunc_out_MutexHandle);
 }
-/* end of the function myxfunc_out_RTOS */
+
+/**
+ * @brief my_comm_switch_to_RTOS_func_impl
+ * @param o_s which stream should be switched
+ */
+static void my_comm_switch_to_RTOS_func_impl(out_stream_t *o_s)
+{
+    _Bool please_quit = false;
+    do {
+        ENTER_CRITICAL_SECTION_NO_RTOS();
+        if (o_s->XmitState == STATE_UNLOCKED) {
+            if (o_s->TxTail == 0U) {
+                please_quit = true;
+                extern _Bool Transmit_non_RTOS; ///< used in non-rtos isr
+                Transmit_non_RTOS = false;
+                extern void (*xfunc_out)(unsigned char);
+                xfunc_out = myxfunc_out_RTOS;
+                reset_o_stream(o_s);
+            }
+        }
+        LEAVE_CRITICAL_SECTION_NO_RTOS();
+        if (!please_quit) {
+            uint32_t t0 = time_now_ms();
+            uint32_t t1 = t0 + 100U;
+            while (time_now_ms() < t1) {
+                /*  */
+            };
+        }
+    } while (!please_quit);
+}
+
+/**
+ * @brief my_comm_update_mutexes
+ */
+void my_comm_update_mutexes(void)
+{
+    if (NULL == xfunc_out_MutexHandle) {
+        Error_Handler();
+    }
+    p_act_outstream->xfunc_out_MutexHandle = xfunc_out_MutexHandle;
+
+    if (NULL == comm_taskHandle) {
+        Error_Handler();
+    }
+    p_act_outstream->comm_taskHandle = comm_taskHandle;
+}
+
+/**
+ * @brief my_comm_switch_to_RTOS_func
+ */
+void my_comm_switch_to_RTOS_func(void)
+{
+    my_comm_switch_to_RTOS_func_impl(p_act_outstream);
+}
+
+#endif
 
 /******************************** transmit functions ********************/
 
 /**
-  * @brief  Transmit invokes transmit procedure
-  * @param  ptr is a pointer to udp socket
-  * @note   if ther is no sockets, ptr must be NULL
-  * @note   non-RTOS function
-  * @retval ERROR or SUCCESS
-  */
-ErrorStatus Transmit(const void *ptr)
+ * @brief Transmit_impl
+ * @param o_stream pointer to the out_stream_t object
+ * @return ERROR or SUCCESS
+ */
+static ErrorStatus Transmit_impl(out_stream_t *const o_stream)
 {
-	ErrorStatus result = SUCCESS;
+    ErrorStatus result = ERROR;
+    do {
+        if (o_stream->TransmitFuncRunning) {
+            result = SUCCESS; /* this is not an error */
+            break;
+        }
 
-	TransmitFuncRunning = true;
+        o_stream->TransmitFuncRunning = true;
 
-	static HAL_StatusTypeDef XmitStatus;
+        if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+            /* Error - the function was called under RTOS! */
+            break;
+        }
 
-	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-		taskENTER_CRITICAL();
-	}
+        /* flag indicates "exit now" condition appeared inside critical section */
+        _Bool  need_exit = false;
+        size_t tmptail   = o_stream->TxTail;
 
-	if ((XmitState != STATE_UNLOCKED) || (ActBufState == STATE_LOCKED) ||
-	    (TxTail == (size_t)0U)) {
-		/* usart didn't transmit yet OR outfunc is runnung OR  active buffer is empty */
-		if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-			taskEXIT_CRITICAL();
-		}
-		goto fExit;
-	}
-	// there is no ongoing transmission
-	XmitState = STATE_LOCKED;   // set lock
-	ActBufState = STATE_LOCKED; // switch active buffer
+        ENTER_CRITICAL_SECTION_NO_RTOS();
 
-	// there is something to transmit
-	size_t tmptail;
-	tmptail = TxTail;
-	if (pActTxBuf == TxBuf1) {
-		pActTxBuf = TxBuf2;
-		TxTail = 0U; // RESET index
-		pXmitTxBuf = TxBuf1;
-	} else {
-		if (pActTxBuf == TxBuf2) {
-			pActTxBuf = TxBuf1;
-			TxTail = 0U; // RESET index
-			pXmitTxBuf = TxBuf2;
-		} else {
-			ActBufState = STATE_UNLOCKED; // wrong act buf pointer!!
-			XmitState = STATE_UNLOCKED;
-			if (xTaskGetSchedulerState() !=
-			    taskSCHEDULER_NOT_STARTED) {
-				taskEXIT_CRITICAL();
-			}
-			goto fExit;
-		}
-	}
+        if ((o_stream->XmitState != STATE_UNLOCKED) || (o_stream->ActBufState == STATE_LOCKED) ||
+            (o_stream->TxTail == (size_t)0U)) {
+            /* usart didn't finish the transmission yet OR outfunc is runnung OR  active buffer is empty */
+            need_exit = true;
+        } else {
+            /* there is something to transmit */
+            o_stream->XmitState   = STATE_LOCKED; // set lock
+            o_stream->ActBufState = STATE_LOCKED; // lock access to the  active buffer
 
-	// here all the conditions are OK. let's send!
-	ActBufState = STATE_UNLOCKED;
-	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-		taskEXIT_CRITICAL();
-	}
+            if (o_stream->pActTxBuf == o_stream->pTxBuf1) {
+                o_stream->pActTxBuf  = o_stream->pTxBuf2;
+                o_stream->pXmitTxBuf = o_stream->pTxBuf1;
+            } else if (o_stream->pActTxBuf == o_stream->pTxBuf2) {
+                o_stream->pActTxBuf  = o_stream->pTxBuf1;
+                o_stream->pXmitTxBuf = o_stream->pTxBuf2;
+            } else {
+                // wrong act buf pointer!!
+                o_stream->XmitState = STATE_UNLOCKED;
+                need_exit           = true;
+            }
+            o_stream->TxTail = 0U; // RESET index
+        }
+        LEAVE_CRITICAL_SECTION_NO_RTOS();
 
-#ifndef NO_LAN
-	if (ptr == NULL) {
-#endif
-		XmitStatus = HAL_UART_Transmit_DMA(
-			&DEBUG_UART, (uint8_t *)pXmitTxBuf, (uint16_t)tmptail);
-		result = (XmitStatus == HAL_ERROR) ? ERROR : SUCCESS;
-#ifndef NO_LAN
-	} else {
-		result = write_socket((socket_p)ptr, (uint8_t*)pXmitTxBuf,
-				      (int32_t)tmptail);
-		XmitState = STATE_UNLOCKED;
-	}
-#else
-	(void)ptr;
-#endif
-fExit:
-	TransmitFuncRunning = false;
-	return result;
+        o_stream->ActBufState = STATE_UNLOCKED;
+
+        if (!need_exit) { /* here all the conditions are OK. let's send! */
+
+            const size_t actual = o_stream->sink_fun.send_bytes(o_stream->pXmitTxBuf, tmptail);
+            result              = (actual != tmptail) ? ERROR : SUCCESS;
+        }
+    } while (false);
+
+    o_stream->TransmitFuncRunning = false;
+    return result;
 }
+
+/**
+ * @brief Transmit
+ * @return ERROR or SUCCESS
+ */
+ErrorStatus Transmit(void)
+{
+    return Transmit_impl(p_act_outstream);
+}
+
 /* end of the function Transmit() */
 
+#ifdef WITH_RTOS
 /**
-  * @brief  Transmit_RTOS invokes transmit procedure
-  * @param  ptr is a pointer to udp socket
-  * @note   if ther is no sockets, ptr must be NULL
-  * @retval ERROR or SUCCESS
-  */
-ErrorStatus Transmit_RTOS(const void *ptr)
-{
-	ErrorStatus result = SUCCESS;
-	static HAL_StatusTypeDef XmitStatus;
-
-	if (TxTail == (size_t)0U) {
-		goto fExit; /* nothing to do */
-	}
-
-	/* temporary raise task priority */
-	UBaseType_t task_prio;
-	task_prio = uxTaskPriorityGet(comm_taskHandle);
-	/* set the new maximal priority */
-	vTaskPrioritySet(comm_taskHandle,
-			 ((UBaseType_t)configMAX_PRIORITIES - (UBaseType_t)1U));
-
-	/* take the first mutex */
-	if (osMutexWait(xfunc_outMutexHandle, 0) != osOK) {
-		vTaskPrioritySet(comm_taskHandle, task_prio);
-		goto fExit; /* try next time*/
-	}
-
-	size_t tmptail;
-	tmptail = TxTail;
-
-	if (pActTxBuf == TxBuf1) {
-		pActTxBuf = TxBuf2;
-		TxTail = 0U;
-		pXmitTxBuf = TxBuf1;
-
-		osMutexRelease(xfunc_outMutexHandle);
-
-	} else if (pActTxBuf == TxBuf2) {
-		pActTxBuf = TxBuf1;
-		TxTail = 0U;
-		pXmitTxBuf = TxBuf2;
-
-		osMutexRelease(xfunc_outMutexHandle);
-
-	} else {
-		/* error */
-		osMutexRelease(xfunc_outMutexHandle);
-		vTaskPrioritySet(comm_taskHandle, task_prio);
-		goto fExit;
-	}
-
-	/* restore usual priority */
-	vTaskPrioritySet(comm_taskHandle, task_prio);
-
-	/* here all the conditions are OK. let's send! */
-#ifndef NO_LAN
-	if (ptr != NULL) {
-		result = write_socket((socket_p)ptr,
-					pXmitTxBuf,
-					(int32_t)tmptail);
-
-		XmitState = STATE_UNLOCKED;
-	} else {
-#endif
-		/* transmit over USART */
-		XmitStatus = HAL_UART_Transmit_DMA(
-			&DEBUG_UART, (uint8_t *)pXmitTxBuf, (uint16_t)tmptail);
-		result = (XmitStatus == HAL_ERROR) ? ERROR : SUCCESS;
-
-		/* we have to wait a notification INSTEAD ! */
-		static uint32_t notified_val = 0U;
-		if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &notified_val,
-				    portMAX_DELAY) == pdTRUE) {
-			if (notified_val != 1U) {
-				// error!!!
-			}
-		}
-#ifndef NO_LAN
-	}
-#else
-	(void)ptr;
-#endif
-
-fExit:
-	return result;
-}
-/* end of the function Transmit_RTOS() */
-
-/**
- * @brief HAL_UART_TxCpltCallback
- * @param huart
+ * @brief Transmit_RTOS_impl
+ * @param o_stream pointer to the out_stream_t object
+ * @return ERROR or SUCCESS
  */
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+static ErrorStatus Transmit_RTOS_impl(out_stream_t *const o_stream)
 {
-	if (huart == &DEBUG_UART) {
-		/* transmit completed! */
-		XmitState = STATE_UNLOCKED;
+    ErrorStatus result = ERROR;
+    do {
+        if (o_stream->TxTail == (size_t)0U) {
+            result = SUCCESS;
+            break; /* nothing to do */
+        }
 
-		/* usart1 IRQ priority must be lower than MAX_SYSCALL_...._PRIORITY */
-		BaseType_t xHigherPriorityTaskWoken;
+        /* temporary raise task priority */
+        UBaseType_t task_prio;
+        task_prio = uxTaskPriorityGet(o_stream->comm_taskHandle);
+        /* set the new maximal priority */
+        vTaskPrioritySet(o_stream->comm_taskHandle,
+                         ((UBaseType_t)configMAX_PRIORITIES - (UBaseType_t)1U));
 
-		if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-			if (xTaskNotifyFromISR(comm_taskHandle, 1U,
-					       eSetValueWithOverwrite,
-					       &xHigherPriorityTaskWoken) !=
-			    pdPASS) {
-				// error
-			}
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-		}
-	}
+        /* take the mutex */
+        if (osMutexWait(o_stream->xfunc_out_MutexHandle, 0) != osOK) {
+            vTaskPrioritySet(o_stream->comm_taskHandle, task_prio);
+            result = SUCCESS;
+            break; /* try next time*/
+        }
+
+        /* flag indicates "exit now" condition appeared inside critical section */
+        _Bool  need_exit = false;
+        size_t tmptail   = o_stream->TxTail;
+
+        if (o_stream->pActTxBuf == o_stream->pTxBuf1) {
+            o_stream->pActTxBuf  = o_stream->pTxBuf2;
+            o_stream->pXmitTxBuf = o_stream->pTxBuf1;
+        } else if (o_stream->pActTxBuf == o_stream->pTxBuf2) {
+            o_stream->pActTxBuf  = o_stream->pTxBuf1;
+            o_stream->pXmitTxBuf = o_stream->pTxBuf2;
+        } else {
+            /* error */
+            need_exit = true;
+        }
+
+        o_stream->TxTail = 0U;
+        RESULT_UNUSED osMutexRelease(o_stream->xfunc_out_MutexHandle);
+        vTaskPrioritySet(o_stream->comm_taskHandle, task_prio);
+
+        if (need_exit) {
+            break;
+        }
+
+        /* here all the conditions are OK. let's send! */
+        const size_t actual = o_stream->sink_fun.send_bytes(o_stream->pXmitTxBuf, tmptail);
+        result              = (actual != tmptail) ? ERROR : SUCCESS;
+
+        /* we have to wait a notification ! */
+        static uint32_t notified_val = 0U;
+        if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &notified_val, portMAX_DELAY) == pdTRUE) {
+            if (notified_val != 1U) {
+                result = ERROR;
+            }
+        }
+    } while (false);
+
+    return result;
 }
-/* end of HAL_UART_TxCpltCallback() */
 
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+/**
+ * @brief Transmit_RTOS_impl
+ * @return ERROR or SUCCESS
+ */
+ErrorStatus Transmit_RTOS(void)
 {
-	static uint32_t ec = 0U;
-	ec = huart->ErrorCode;
-
-	UNUSED(ec);
+    return Transmit_RTOS_impl(p_act_outstream);
 }
+
+/* end of the function Transmit_RTOS() */
+#endif
+
+/**
+ * @brief o_stream_cb
+ */
+static void o_stream_cb(void *arg)
+{
+    out_stream_t *o_stream = (out_stream_t *)arg;
+
+    o_stream->XmitState = STATE_UNLOCKED; /* used in the non-RTOS calls */
+#ifdef WITH_RTOS
+    /* usart1 IRQ priority must be lower than MAX_SYSCALL_...._PRIORITY */
+    BaseType_t xHigherPriorityTaskWoken;
+
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+        if (xTaskNotifyFromISR(o_stream->comm_taskHandle, 1U, eSetValueWithOverwrite,
+                               &xHigherPriorityTaskWoken) != pdPASS) {
+            // error
+        }
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+#endif
+}
+
+#ifdef WITH_RTOS
+
+#endif
 
 /* ############################### end of file ############################### */

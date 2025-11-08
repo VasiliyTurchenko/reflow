@@ -25,9 +25,6 @@
 extern volatile	uint32_t	RCC_CSR_copy;		/* copy of the RCC_CSR */
 extern volatile uint32_t	Saved_Magic_Bits;	/* watchdog */
 
-extern volatile bool Transmit_non_RTOS;
-
-
 ErrorStatus AppStartUp(void);
 
 #ifdef __cplusplus

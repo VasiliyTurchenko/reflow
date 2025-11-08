@@ -10,7 +10,7 @@
 #include "framebuffer.h"
 #include "parameters_storage.h"
 #include "logging.h"
-#include "sys_helpers.h"
+#include "platform_time_util.h"
 
 static EEPROM_pool_t cfg_pool;
 static _Bool         cfg_loaded = false;

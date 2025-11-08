@@ -1,111 +1,106 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * File Name          : freertos.c
-  * Description        : Code for freertos applications
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
+/** @file freertos.c
+ *  @brief
+ *
+ *  @author turchenkov@gmail.com
+ *  @bug
+ *  @date 2025-11-08
+ */
+/*! file freertos.c
+ * Copyright (c) 2025-11-08 turchenkov@gmail.com
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY,  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+ * IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
-/* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 #include "task.h"
-#include "main.h"
+#include "hal_ll.h"
 #include "cmsis_os.h"
-
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+#include "freertos_exported.h"
 
 #include "comm_task.h"
 #include "kbd_task.h"
 #include "ui_task.h"
 #include "control_task.h"
+#include "logging.h"
 
-/* USER CODE END Includes */
+static bool InitCompleted = false;
+extern bool Transmit_non_RTOS;
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
+static const char *task_started_msg = "started...\n";
 
-/* USER CODE END PTD */
+/**
+ * @brief msg_task_started
+ */
+static inline void msg_task_started(void)
+{
+    log_xputs(MSG_LEVEL_TASK_INIT, task_started_msg);
+}
 
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
+osMutexId          xfunc_out_MutexHandle;
+osStaticMutexDef_t xfunc_out_Mutex_ControlBlock;
 
-/* USER CODE END PD */
+osMutexId          logging_MutexHandle;
+osStaticMutexDef_t logging_Mutex_ControlBlock;
 
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN Variables */
-
-osMutexId xfunc_outMutexHandle;
-osStaticMutexDef_t xfunc_outMutex_ControlBlock;
-
-
-/* USER CODE END Variables */
-osThreadId defaultTaskHandle;
-uint32_t defaultTaskBuffer[ 128 ];
+osThreadId          defaultTaskHandle;
+uint32_t            defaultTaskBuffer[128];
 osStaticThreadDef_t defaultTaskControlBlock;
 
-osThreadId kbd_taskHandle;
-uint32_t kbd_task_Buffer[ 128 ];
+osThreadId          kbd_taskHandle;
+uint32_t            kbd_task_Buffer[128];
 osStaticThreadDef_t kbd_task_ControlBlock;
 
-osThreadId control_taskHandle;
-uint32_t control_task_Buffer[ 256 ];
+osThreadId          control_taskHandle;
+uint32_t            control_task_Buffer[256];
 osStaticThreadDef_t control_task_ControlBlock;
 
-osThreadId comm_taskHandle;
-uint32_t comm_task_Buffer[ 200 ];
+osThreadId          comm_taskHandle;
+uint32_t            comm_task_Buffer[200];
 osStaticThreadDef_t comm_task_ControlBlock;
 
-osThreadId temperatur_taskHandle;
-uint32_t temperatur_task_Buffer[ 200 ];
+osThreadId          temperatur_taskHandle;
+uint32_t            temperatur_task_Buffer[200];
 osStaticThreadDef_t temperatur_task_ControlBlock;
 
-osThreadId ui_taskHandle;
-uint32_t ui_task_Buffer[ 200 ];
+osThreadId          ui_taskHandle;
+uint32_t            ui_task_Buffer[200];
 osStaticThreadDef_t ui_task_ControlBlock;
 
-/* Private function prototypes -----------------------------------------------*/
-/* USER CODE BEGIN FunctionPrototypes */
-
-/* USER CODE END FunctionPrototypes */
-
-void StartDefaultTask(void const * argument);
-void Start_kbd_task(void const * argument);
-void Start_control_task(void const * argument);
-void Start_comm_task(void const * argument);
-void Start_temperatur_task(void const * argument);
-void Start_ui_task(void const * argument);
+void StartDefaultTask(void const *argument);
+void Start_kbd_task(void const *argument);
+void Start_control_task(void const *argument);
+void Start_comm_task(void const *argument);
+void Start_temperatur_task(void const *argument);
+void Start_ui_task(void const *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
+                                   StackType_t  **ppxIdleTaskStackBuffer,
+                                   uint32_t      *pulIdleTaskStackSize);
 
 /* Hook prototypes */
 void vApplicationIdleHook(void);
 void vApplicationTickHook(void);
 
 /* USER CODE BEGIN 2 */
-__weak void vApplicationIdleHook( void )
+__weak void vApplicationIdleHook(void)
 {
-   /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
+    /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
    to 1 in FreeRTOSConfig.h. It will be called on each iteration of the idle
    task. It is essential that code added to this hook function never attempts
    to block in any way (for example, call xQueueReceive() with a block time
@@ -118,9 +113,9 @@ __weak void vApplicationIdleHook( void )
 /* USER CODE END 2 */
 
 /* USER CODE BEGIN 3 */
-__weak void vApplicationTickHook( void )
+__weak void vApplicationTickHook(void)
 {
-   /* This function will be called by each tick interrupt if
+    /* This function will be called by each tick interrupt if
    configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h. User code can be
    added here, but the tick hook is called from an interrupt context, so
    code must not attempt to block, and only the interrupt safe FreeRTOS API
@@ -130,14 +125,16 @@ __weak void vApplicationTickHook( void )
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
-static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
+static StackType_t  xIdleStack[configMINIMAL_STACK_SIZE];
 
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
+                                   StackType_t  **ppxIdleTaskStackBuffer,
+                                   uint32_t      *pulIdleTaskStackSize)
 {
-  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
-  *ppxIdleTaskStackBuffer = &xIdleStack[0];
-  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
-  /* place for user code */
+    *ppxIdleTaskTCBBuffer   = &xIdleTaskTCBBuffer;
+    *ppxIdleTaskStackBuffer = &xIdleStack[0];
+    *pulIdleTaskStackSize   = configMINIMAL_STACK_SIZE;
+    /* place for user code */
 }
 /* USER CODE END GET_IDLE_TASK_MEMORY */
 
@@ -146,79 +143,58 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
   * @param  None
   * @retval None
   */
-void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+void MX_FREERTOS_Init(void)
+{
+    osMutexStaticDef(xfunc_out_Mutex, &xfunc_out_Mutex_ControlBlock);
+    xfunc_out_MutexHandle = osMutexCreate(osMutex(xfunc_out_Mutex));
 
-  /* USER CODE END Init */
+    osMutexStaticDef(logging_Mutex, &logging_Mutex_ControlBlock);
+    logging_MutexHandle = osMutexCreate(osMutex(logging_Mutex));
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+    /* Create the thread(s) */
+    /* definition and creation of defaultTask */
+    osThreadStaticDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128, defaultTaskBuffer,
+                      &defaultTaskControlBlock);
+    defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-    osMutexStaticDef(xfunc_outMutex, &xfunc_outMutex_ControlBlock);
-    xfunc_outMutexHandle = osMutexCreate(osMutex(xfunc_outMutex));
+    /* definition and creation of kbd_task */
+    osThreadStaticDef(kbd_task, Start_kbd_task, osPriorityNormal, 0, 128, kbd_task_Buffer,
+                      &kbd_task_ControlBlock);
+    kbd_taskHandle = osThreadCreate(osThread(kbd_task), NULL);
 
-  /* USER CODE END RTOS_MUTEX */
+    /* definition and creation of display_task */
+    osThreadStaticDef(control_task, Start_control_task, osPriorityRealtime, 0, 256,
+                      control_task_Buffer, &control_task_ControlBlock);
+    control_taskHandle = osThreadCreate(osThread(control_task), NULL);
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* definition and creation of comm_task */
+    osThreadStaticDef(comm_task, Start_comm_task, osPriorityAboveNormal, 0, 200, comm_task_Buffer,
+                      &comm_task_ControlBlock);
+    comm_taskHandle = osThreadCreate(osThread(comm_task), NULL);
 
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+    /* definition and creation of temperatur_task */
+    osThreadStaticDef(temperatur_task, Start_temperatur_task, osPriorityRealtime, 0, 200,
+                      temperatur_task_Buffer, &temperatur_task_ControlBlock);
+    temperatur_taskHandle = osThreadCreate(osThread(temperatur_task), NULL);
 
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadStaticDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128, defaultTaskBuffer, &defaultTaskControlBlock);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-
-  /* definition and creation of kbd_task */
-  osThreadStaticDef(kbd_task, Start_kbd_task, osPriorityNormal, 0, 128, kbd_task_Buffer, &kbd_task_ControlBlock);
-  kbd_taskHandle = osThreadCreate(osThread(kbd_task), NULL);
-
-  /* definition and creation of display_task */
-  osThreadStaticDef(control_task, Start_control_task, osPriorityRealtime, 0, 256, control_task_Buffer, &control_task_ControlBlock);
-  control_taskHandle = osThreadCreate(osThread(control_task), NULL);
-
-  /* definition and creation of comm_task */
-  osThreadStaticDef(comm_task, Start_comm_task, osPriorityAboveNormal, 0, 200, comm_task_Buffer, &comm_task_ControlBlock);
-  comm_taskHandle = osThreadCreate(osThread(comm_task), NULL);
-
-  /* definition and creation of temperatur_task */
-  osThreadStaticDef(temperatur_task, Start_temperatur_task, osPriorityRealtime, 0, 200, temperatur_task_Buffer, &temperatur_task_ControlBlock);
-  temperatur_taskHandle = osThreadCreate(osThread(temperatur_task), NULL);
-
-  /* definition and creation of ui_task */
-  osThreadStaticDef(ui_task, Start_ui_task, osPriorityNormal, 0, 200, ui_task_Buffer, &ui_task_ControlBlock);
-  ui_taskHandle = osThreadCreate(osThread(ui_task), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
+    /* definition and creation of ui_task */
+    osThreadStaticDef(ui_task, Start_ui_task, osPriorityNormal, 0, 200, ui_task_Buffer,
+                      &ui_task_ControlBlock);
+    ui_taskHandle = osThreadCreate(osThread(ui_task), NULL);
 }
 
-/* USER CODE BEGIN Header_StartDefaultTask */
 /**
   * @brief  Function implementing the defaultTask thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
+void StartDefaultTask(void const *argument)
 {
-
     UNUSED(argument);
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartDefaultTask */
+    msg_task_started();
+    for (;;) {
+        osDelay(1);
+    }
 }
 
 /**
@@ -226,14 +202,13 @@ void StartDefaultTask(void const * argument)
 * @param argument: Not used
 * @retval None
 */
-void __attribute__((noreturn)) Start_kbd_task(void const * argument)
+void __attribute__((noreturn)) Start_kbd_task(void const *argument)
 {
     kbd_task_init();
     (void)argument;
-  for(;;)
-  {
-    kbd_task_run();
-  }
+    for (;;) {
+        kbd_task_run();
+    }
 }
 
 /**
@@ -241,50 +216,41 @@ void __attribute__((noreturn)) Start_kbd_task(void const * argument)
 * @param argument: Not used
 * @retval None
 */
-void __attribute__((noreturn)) Start_control_task(void const * argument)
+void __attribute__((noreturn)) Start_control_task(void const *argument)
 {
-  control_task_init();
-  (void)argument;
-  for(;;)
-  {
-    control_task_run();
-  }
+    control_task_init();
+    (void)argument;
+    for (;;) {
+        control_task_run();
+    }
 }
-
 
 /**
 * @brief Function implementing the comm_task thread.
 * @param argument: Not used
 * @retval None
 */
-void __attribute__((noreturn)) Start_comm_task(void const * argument)
+void __attribute__((noreturn)) Start_comm_task(void const *argument)
 {
-  comm_task_init();
-  (void)argument;
+    comm_task_init();
+    (void)argument;
 
-  for(;;)
-  {
-    comm_task_run();
-  }
+    for (;;) {
+        comm_task_run();
+    }
 }
 
-/* USER CODE BEGIN Header_Start_temperatur_task */
 /**
 * @brief Function implementing the temperatur_task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Start_temperatur_task */
-void Start_temperatur_task(void const * argument)
+void Start_temperatur_task(void const *argument)
 {
     UNUSED(argument);
-  /* USER CODE BEGIN Start_temperatur_task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END Start_temperatur_task */
+    for (;;) {
+        osDelay(UINT32_MAX);
+    }
 }
 
 /**
@@ -292,16 +258,12 @@ void Start_temperatur_task(void const * argument)
 * @param argument: Not used
 * @retval None
 */
-void __attribute__((noreturn)) Start_ui_task(void const * argument)
+void __attribute__((noreturn)) Start_ui_task(void const *argument)
 {
-  ui_task_init();
-  UNUSED(argument);
+    ui_task_init();
+    UNUSED(argument);
 
-  for(;;)
-  {
-    ui_task_run();
-  }
+    for (;;) {
+        ui_task_run();
+    }
 }
-
-
-/***************************** END OF FILE ************************************/

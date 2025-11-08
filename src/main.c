@@ -30,16 +30,12 @@
 #include "rtc.h"
 #include "spi.h"
 #include "tim.h"
-#include "usart.h"
+
 #include "wwdg.h"
 #include "gpio.h"
-
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
+#include "debug_sink.h"
 #include "startup.h"
-#include "xprintf.h"
-#include "my_comm.h"
+#include "logging.h"
 
 #include "exti.h"
 
@@ -50,41 +46,11 @@
 
 #endif
 
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
 volatile uint32_t SPI2_TxCplt_flag;
 volatile uint32_t RX_ready_flag;
 
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
@@ -92,30 +58,10 @@ void MX_FREERTOS_Init(void);
   */
 int main(void)
 {
-    /* USER CODE BEGIN 1 */
-    /* USER CODE END 1 */
-
-    /* MCU Configuration--------------------------------------------------------*/
-
-    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
     (void)HAL_Init();
-
-    /* USER CODE BEGIN Init */
-
-    /* USER CODE END Init */
-
-    /* Configure the system clock */
     SystemClock_Config();
-
-    /* USER CODE BEGIN SysInit */
-
-    /* save the reboot flag */
     RCC_CSR_copy = RCC->CSR;
     SET_BIT(RCC->CSR, RCC_CSR_RMVF); /* clear the reboot flags */
-
-    /* USER CODE END SysInit */
-
-    /* Initialize all configured peripherals */
     MX_GPIO_Init();
     MX_DMA_Init();
     MX_ADC1_Init();
@@ -125,10 +71,9 @@ int main(void)
     MX_SPI2_Init();
     MX_TIM2_Init();
     MX_TIM3_Init();
-    MX_USART1_UART_Init();
+
     //  MX_WWDG_Init();
     MX_RTC_Init();
-    /* USER CODE BEGIN 2 */
 
     (void)HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
     (void)HAL_TIM_Base_Start_IT(&htim3);
@@ -137,27 +82,20 @@ int main(void)
         NVIC_SystemReset();
     }
 
-    HAL_Delay(500U);
-    Transmit_non_RTOS = false;
-    xfunc_out         = myxfunc_out_RTOS; /* diagnostic print */
-    /* USER CODE END 2 */
+    HAL_Delay(200U);
 
-    /* Call init function for freertos objects (in freertos.c) */
+    debug_sink_switch_to_RTOS();
+
     MX_FREERTOS_Init();
 
-    /* Start scheduler */
-    (void)osKernelStart();
+    debug_sink_update_mutexes();
+
+    RESULT_UNUSED osKernelStart();
 
     /* We should never get here as control is now taken by the scheduler */
-
     /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
     while (true) {
-        /* USER CODE END WHILE */
-
-        /* USER CODE BEGIN 3 */
     }
-    /* USER CODE END 3 */
 }
 
 /**
@@ -292,8 +230,6 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
     }
 }
 
-/* USER CODE END 4 */
-
 /**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM1 interrupt took place, inside
@@ -325,15 +261,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 #endif
     }
 
-    /* act with serial port */
-    if (htim->Instance == TIM1) {
-        if (Transmit_non_RTOS) {
-            /* every millisecond */
-            if (TransmitFuncRunning) {
-                (void)Transmit(NULL);
+#if defined(DEBUG_USART)
+    static uint32_t decimator = 0U;
+    if (Transmit_non_RTOS) {
+        if (htim->Instance == TIM1) {
+            if (0U == decimator) {
+                extern ErrorStatus Transmit(void);
+                RESULT_UNUSED      Transmit();
+                decimator = 11U;
             }
+            decimator--;
         }
     }
+
+#endif
+
 #if (0)
     if (htim->Instance == TIM3) {
         HAL_GPIO_TogglePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin);
@@ -350,38 +292,4 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         }
     }
 #endif
-    /* USER CODE END Callback 1 */
 }
-
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-    /* USER CODE BEGIN Error_Handler_Debug */
-    /* User can add his own implementation to report the HAL error return state */
-
-    /* USER CODE END Error_Handler_Debug */
-}
-
-#ifdef USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(const char *file, uint32_t line)
-{
-    /* USER CODE BEGIN 6 */
-    /* User can add his own implementation to report the file name and line number,
-     tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-    /* USER CODE END 6 */
-}
-#endif /* USE_FULL_ASSERT */
-
-//void __register_exitproc(void) { }
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

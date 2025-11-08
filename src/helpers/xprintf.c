@@ -11,12 +11,22 @@
 /
 /-------------------------------------------------------------------------*/
 
+/* MISRA not passed - starg.h is the reason */
+
+#include <stddef.h>
 #include "xprintf.h"
 
-#if _USE_XFUNC_OUT
-#include <stdarg.h>
-void (*xfunc_out)(unsigned char); /* Pointer to the output stream */
-static char *outptr;
+#ifndef DESKTOP_TARGET
+#endif
+
+#if USE_XFUNC_OUT
+#include <stdarg.h> /* MISRA violation */
+
+/* pointer to the output function */
+void (*xfunc_out)(unsigned char c);
+
+/* Pointer to the output stream */
+static char *outptr = NULL;
 
 /*----------------------------------------------*/
 /* Put a character                              */
@@ -24,41 +34,48 @@ static char *outptr;
 
 void xputc(char c)
 {
-    if (_CR_CRLF && c == '\n')
+    if ((c == '\n') && (CR_CRLF_ == 1)) {
+        /* MISRA violation - recursive call */
         xputc('\r'); /* CR -> CRLF */
-
-    if (outptr) {
-        *outptr++ = (unsigned char)c;
-        return;
     }
 
-    if (xfunc_out)
+    if (outptr != NULL) {
+        *outptr = c;
+        outptr++;
+    } else if (xfunc_out != NULL) {
         xfunc_out((unsigned char)c);
+    } else {
+        /* stub */
+    }
 }
 
-/*----------------------------------------------*/
-/* Put a null-terminated string                 */
-/*----------------------------------------------*/
-
-void xputs(                /* Put a string to the default device */
-           const char *str /* Pointer to the string */
-)
+/**
+ * @brief xputs Put a string to the default device
+ * @param str
+ */
+void xputs(const char *str) /* Pointer to the string */
 {
-    while (*str)
-        xputc(*str++);
+    while (*str != '\0') {
+        xputc(*str);
+        str++;
+    }
 }
 
-void xfputs(                             /* Put a string to the specified device */
-            void (*func)(unsigned char), /* Pointer to the output function */
-            const char *str              /* Pointer to the string */
-)
+/**
+ * @brief xfputs Put a string to the specified device
+ * @param str
+ */
+void xfputs(void (*func)(unsigned char c), /* Pointer to the output function */
+            const char *str)               /* Pointer to the string */
 {
-    void (*pf)(unsigned char);
+    void (*pf)(unsigned char c);
 
     pf        = xfunc_out; /* Save current output device */
     xfunc_out = func;      /* Switch output to specified device */
-    while (*str)           /* Put the string */
-        xputc(*str++);
+    while (*str != '\0') { /* Put the string */
+        xputc(*str);
+        str++;
+    }
     xfunc_out = pf; /* Restore output device */
 }
 
@@ -66,122 +83,179 @@ void xfputs(                             /* Put a string to the specified device
 /* Formatted string output                      */
 /*----------------------------------------------*/
 /*  xprintf("%d", 1234);			"1234"
-    xprintf("%6d,%3d%%", -200, 5);	"  -200,  5%"
-    xprintf("%-6u", 100);			"100   "
-    xprintf("%ld", 12345678L);		"12345678"
-    xprintf("%04x", 0xA3);			"00a3"
-    xprintf("%08LX", 0x123ABC);		"00123ABC"
-    xprintf("%016b", 0x550F);		"0101010100001111"
-    xprintf("%s", "String");		"String"
-    xprintf("%-4s", "abc");			"abc "
-    xprintf("%4s", "abc");			" abc"
-    xprintf("%c", 'a');				"a"
-    xprintf("%f", 10.0);            <xprintf lacks floating point support>
+	xprintf("%6d,%3d%%", -200, 5);	"  -200,  5%"
+	xprintf("%-6u", 100);			"100   "
+	xprintf("%ld", 12345678L);		"12345678"
+	xprintf("%04x", 0xA3);			"00a3"
+	xprintf("%08LX", 0x123ABC);		"00123ABC"
+	xprintf("%016b", 0x550F);		"0101010100001111"
+	xprintf("%s", "String");		"String"
+	xprintf("%-4s", "abc");			"abc "
+	xprintf("%4s", "abc");			" abc"
+	xprintf("%c", 'a');				"a"
+	xprintf("%f", 10.0);            <xprintf lacks floating point support>
 */
 
+/**
+ * @brief xvprintf Formatted string output
+ * @param fmt
+ * @param arp
+ */
 static void xvprintf(const char *fmt, /* Pointer to the format string */
-                     va_list     arp  /* Pointer to arguments */
-)
+                     va_list     arp)     /* Pointer to arguments */
 {
-    unsigned int  r, i, j, w, f;
-    unsigned long v;
-    char          s[16], c, d, *p;
+    char c;
 
     for (;;) {
-        c = *fmt++; /* Get a char */
-        if (!c)
-            break;      /* End of format? */
+        c = *fmt; /* Get a char */
+        fmt++;
+
+        if (c == '\0') {
+            break; /* End of format? */
+        }
+
         if (c != '%') { /* Pass through it if not a % sequense */
             xputc(c);
             continue;
         }
-        f = 0;
-        c = *fmt++;     /* Get first char of the sequense */
+
+        /* % format string found */
+        unsigned int f = 0U;
+        c              = *fmt; /* Get first char of the sequense */
+        fmt++;
+
         if (c == '0') { /* Flag: '0' padded */
             f = 1;
-            c = *fmt++;
+            c = *fmt;
+            fmt++;
+        } else if (c == '-') { /* Flag: left justified */
+            f = 2;
+            c = *fmt;
+            fmt++;
         } else {
-            if (c == '-') { /* Flag: left justified */
-                f = 2;
-                c = *fmt++;
-            }
+            /* */
         }
-        for (w = 0; c >= '0' && c <= '9'; c = *fmt++) /* Minimum width */
-            w = w * 10 + c - '0';
-        if (c == 'l' || c == 'L') { /* Prefix: Size is long int */
-            f |= 4;
-            c = *fmt++;
+
+        unsigned int w;
+        for (w = 0; ((c >= '0') && (c <= '9')); c = *fmt++) {
+            /* Minimum width */
+            w = (w * 10U) + (unsigned int)c - (unsigned int)'0';
         }
-        if (!c)
+
+        if ((c == 'l') || (c == 'L')) { /* Prefix: Size is long int */
+            f |= 4U;
+            c = *fmt;
+            fmt++;
+        }
+
+        if (c == '\0') {
             break; /* End of format? */
-        d = c;
-        if (d >= 'a')
-            d -= 0x20;
+        }
+
+        char d = c;
+
+        if (d >= 'a') {
+            d -= ' ';
+        }
+
+        const char   *p;
+        unsigned int  j         = 0U;
+        unsigned int  radix     = 16U;
+        unsigned char cont_flag = 0U;
         switch (d) { /* Type is... */
         case 'S':    /* String */
             p = va_arg(arp, char *);
-            for (j = 0; p[j]; j++)
+            for (j = 0; p[j] != '\0'; j++) {
                 ;
-            while (!(f & 2) && j++ < w)
+            }
+            while (((f & 2U) == 0U) && (j++ < w)) {
                 xputc(' ');
+            }
             xputs(p);
-            while (j++ < w)
+            while (j++ < w) {
                 xputc(' ');
-            continue;
+            }
+            cont_flag = 1U;
+            break;
         case 'C': /* Character */
             xputc((char)va_arg(arp, int));
-            continue;
+            cont_flag = 1U;
+            break;
         case 'B': /* Binary */
-            r = 2;
+            radix = 2;
             break;
         case 'O': /* Octal */
-            r = 8;
+            radix = 8;
             break;
         case 'D': /* Signed decimal */
         case 'U': /* Unsigned decimal */
-            r = 10;
+            radix = 10;
             break;
         case 'X': /* Hexdecimal */
-            r = 16;
+            radix = 16;
             break;
         default: /* Unknown type (passthrough) */
             xputc(c);
+            cont_flag = 1U;
+            break;
+        }
+
+        if (cont_flag == 1U) {
             continue;
         }
 
+        unsigned long v = 0U;
         /* Get an argument and put it in numeral */
-        v = (f & 4) ? va_arg(arp, long) :
-                      ((d == 'D') ? (long)va_arg(arp, int) : (long)va_arg(arp, unsigned int));
-        if (d == 'D' && (v & 0x80000000)) {
-            v = 0 - v;
-            f |= 8;
+        v = ((f & 4U) != 0U) ?
+                    va_arg(arp, long) :
+                    ((d == 'D') ? (long)va_arg(arp, int) : (long)va_arg(arp, unsigned int));
+
+        if ((d == 'D') && ((v & 0x80000000U) != 0U)) {
+            v = 0 - v; /* MISRA violation */
+            f |= 8U;
         }
-        i = 0;
+        unsigned int i = 0;
+        char         s[16];
+
         do {
-            d = (char)(v % r);
-            v /= r;
-            if (d > 9)
+            d = (char)(v % radix);
+            v /= radix;
+            if (d > (char)9) {
                 d += (c == 'x') ? 0x27 : 0x07;
-            s[i++] = d + '0';
-        } while (v && i < sizeof(s));
-        if (f & 8)
-            s[i++] = '-';
+            }
+            s[i] = d + '0';
+            i++;
+        } while ((v != 0U) && (i < sizeof(s)));
+
+        if ((f & 8U) != 0U) {
+            s[i] = '-';
+            i++;
+        }
+
         j = i;
-        d = (f & 1) ? '0' : ' ';
-        while (!(f & 2) && j++ < w)
+        d = ((f & 1U) != 0U) ? '0' : ' ';
+
+        while (((f & 2U) == 0U) && (j++ < w)) {
             xputc(d);
-        do
-            xputc(s[--i]);
-        while (i);
-        while (j++ < w)
+        }
+
+        do {
+            i--;
+            xputc(s[i]);
+        } while (i > 0U);
+
+        while (j++ < w) {
             xputc(' ');
+        }
     }
 }
 
-void xprintf(                 /* Put a formatted string to the default device */
-             const char *fmt, /* Pointer to the format string */
-             ...              /* Optional arguments */
-)
+/**
+ * @brief xprintf Put a formatted string to the default device
+ * @param fmt Pointer to the format string
+ * @param ... Optional arguments
+ */
+void xprintf(const char *fmt, ...)
 {
     va_list arp;
 
@@ -190,11 +264,13 @@ void xprintf(                 /* Put a formatted string to the default device */
     va_end(arp);
 }
 
-void xsprintf(                  /* Put a formatted string to the memory */
-              char       *buff, /* Pointer to the output buffer */
-              const char *fmt,  /* Pointer to the format string */
-              ...               /* Optional arguments */
-)
+/**
+ * @brief xsprintf Put a formatted string to the memory
+ * @param buff Pointer to the output buffer
+ * @param fmt Pointer to the format string
+ * @param ... Optional arguments
+ */
+void xsprintf(char *buff, const char *fmt, ...)
 {
     va_list arp;
 
@@ -204,18 +280,20 @@ void xsprintf(                  /* Put a formatted string to the memory */
     xvprintf(fmt, arp);
     va_end(arp);
 
-    *outptr = 0; /* Terminate output string with a \0 */
-    outptr  = 0; /* Switch destination for device */
+    *outptr = '\0'; /* Terminate output string with a \0 */
+    outptr  = NULL; /* Switch destination for device */
 }
 
-void xfprintf(                             /* Put a formatted string to the specified device */
-              void (*func)(unsigned char), /* Pointer to the output function */
-              const char *fmt,             /* Pointer to the format string */
-              ...                          /* Optional arguments */
-)
+/**
+ * @brief xfprintf
+ * @param func Pointer to the output function
+ * @param fmt Pointer to the format string
+ * @param ... Optional arguments
+ */
+void xfprintf(void (*func)(unsigned char c), const char *fmt, ...)
 {
     va_list arp;
-    void (*pf)(unsigned char);
+    void (*pf)(unsigned char c);
 
     pf        = xfunc_out; /* Save current output device */
     xfunc_out = func;      /* Switch output to specified device */
@@ -227,15 +305,14 @@ void xfprintf(                             /* Put a formatted string to the spec
     xfunc_out = pf; /* Restore output device */
 }
 
-/*----------------------------------------------*/
-/* Dump a line of binary dump                   */
-/*----------------------------------------------*/
-
-void put_dump(const void   *buff, /* Pointer to the array to be dumped */
-              unsigned long addr, /* Heading address value */
-              int           len,  /* Number of items to be dumped */
-              int           width /* Size of the items (DF_CHAR, DF_SHORT, DF_LONG) */
-)
+/**
+ * @brief put_dump Dumps a line of binary dump
+ * @param buff Pointer to the array to be dumped
+ * @param addr Heading address value
+ * @param len Number of items to be dumped
+ * @param width Size of the items (DF_CHAR, DF_SHORT, DF_LONG)
+ */
+void put_dump(const void *buff, unsigned long addr, int len, int width)
 {
     int                   i;
     const unsigned char  *bp;
@@ -244,28 +321,31 @@ void put_dump(const void   *buff, /* Pointer to the array to be dumped */
 
     xprintf("%08lX ", addr); /* address */
 
-    switch (width) {
+    switch ((size_t)width) {
     case DW_CHAR:
         bp = (const unsigned char *)buff;
-        for (i = 0; i < len; i++) /* Hexdecimal dump */
+        for (i = 0; i < len; i++) { /* Hexdecimal dump */
             xprintf(" %02X", bp[i]);
+        }
         xputc(' ');
-        for (i = 0; i < len; i++) /* ASCII dump */
-            xputc((bp[i] >= ' ' && bp[i] <= '~') ? bp[i] : '.');
+        for (i = 0; i < len; i++) { /* ASCII dump */
+            xputc(((bp[i] >= ' ') && (bp[i] <= '~')) ? bp[i] : '.');
+        }
         break;
     case DW_SHORT:
         sp = (const unsigned short *)buff;
-        do /* Hexdecimal dump */
+        do { /* Hexdecimal dump */
             xprintf(" %04X", *sp++);
-        while (--len);
+        } while ((--len) > 0);
         break;
     case DW_LONG:
         lp = (const unsigned long *)buff;
-        do /* Hexdecimal dump */
+        do { /* Hexdecimal dump */
             xprintf(" %08LX", *lp++);
-        while (--len);
+        } while ((--len) > 0);
         break;
     default:
+        /* */
         break;
     }
 
@@ -274,7 +354,7 @@ void put_dump(const void   *buff, /* Pointer to the array to be dumped */
 
 #endif /* _USE_XFUNC_OUT */
 
-#if _USE_XFUNC_IN
+#ifdef _USE_XFUNC_IN
 unsigned char (*xfunc_in)(void); /* Pointer to the input stream */
 
 /*----------------------------------------------*/
@@ -337,12 +417,12 @@ int xfgets(                             /* 0:End of stream, 1:A line arrived */
 /* Get a value of the string                    */
 /*----------------------------------------------*/
 /*	"123 -5   0x3ff 0b1111 0377  w "
-        ^                           1st call returns 123 and next ptr
-           ^                        2nd call returns -5 and next ptr
-                   ^                3rd call returns 1023 and next ptr
-                          ^         4th call returns 15 and next ptr
-                               ^    5th call returns 255 and next ptr
-                                  ^ 6th call fails and returns 0
+		^                           1st call returns 123 and next ptr
+		   ^                        2nd call returns -5 and next ptr
+				   ^                3rd call returns 1023 and next ptr
+						  ^         4th call returns 15 and next ptr
+							   ^    5th call returns 255 and next ptr
+								  ^ 6th call fails and returns 0
 */
 
 int xatoi(            /* 0:Failed, 1:Successful */

@@ -28,7 +28,7 @@
 
 #include "menu.h"
 #include "temerature_measurement.h"
-#include "sys_helpers.h"
+#include "platform_time_util.h"
 #include "main.h"
 
 #include "tim.h"
@@ -317,7 +317,7 @@ void start_reflow(uint8_t np)
     if (nsteps == 0U) {
         fast_clear_screen();
         gotoXY(0U, 8U);
-        char *ep = "Empty profile!";
+        const char *ep = "Empty profile!";
         zprint(ep, NORM);
         log_xputs(MSG_LEVEL_PROC_ERR, ep);
         sys_helpers_delay_ms(1000U);
@@ -340,9 +340,9 @@ void start_reflow(uint8_t np)
     _Bool    extra_time_added = false; //// < extra time was added
 
     /* if we did not reach the target temperature at the end of the step,
-	 * we can add more time but not more than
-	 * .max_duration - .min_duration
-	*/
+     * we can add more time but not more than
+     * .max_duration - .min_duration
+    */
     uint16_t extra_time = 0U;
 
     int8_t throttle = 0; ///< main control value

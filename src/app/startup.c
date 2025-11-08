@@ -28,6 +28,7 @@
 #include "buildinfo.h"
 #include "i2c_eeprom.h"
 #include "crc32_helpers.h"
+#include "debug_sink.h"
 
 #include "parameters_storage.h"
 
@@ -50,9 +51,6 @@ extern unsigned char      FrameBuffer1[(128 / CHAR_BIT) * (64)];
 
 volatile uint32_t RCC_CSR_copy;     /* copy of the RCC_CSR */
 volatile uint32_t Saved_Magic_Bits; /* watchdog */
-
-/* where to put diagnostic data */
-volatile bool Transmit_non_RTOS;
 
 #ifdef USE_FRAMEBUFFER
 /**
@@ -82,17 +80,25 @@ ErrorStatus AppStartUp(void)
 {
     ErrorStatus retVal = ERROR;
 
-    InitComm();
+    debug_sink_init();
     xfunc_out = myxfunc_out_no_RTOS; /* diagnostic print */
     /* set up periodic UART transmissions */
     Transmit_non_RTOS = true;
 
     log_set_mask_on(MSG_LEVEL_ALL);
+    log_nice_mode_off();
 
     log_xputs(MSG_LEVEL_INFO, "\n\nStarting up...\n");
     log_xputs(MSG_LEVEL_INFO, id);
     log_xputs(MSG_LEVEL_INFO, GIT_HASH);
     log_xputs(MSG_LEVEL_INFO, BUILD_DATE_TIME);
+
+#ifndef NDEBUG
+    log_xputs(MSG_LEVEL_INFO, "DEBUG");
+#else
+    log_xputs(MSG_LEVEL_INFO, "RELEASE");
+#endif
+
 
 #ifdef USE_FRAMEBUFFER
     /* initialize display */

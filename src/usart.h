@@ -1,58 +1,59 @@
-/**
-  ******************************************************************************
-  * File Name          : USART.h
-  * Description        : This file provides code for the configuration
-  *                      of the USART instances.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __usart_H
-#define __usart_H
+/** @file usart.h
+ *  @brief
+ *
+ *  @author turchenkov@gmail.com
+ *  @bug
+ *  @date 2025-11-08
+ */
+/*! file usart.h
+ * Copyright (c) 2025-11-08 turchenkov@gmail.com
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY,  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+ * IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+#ifndef USART_H
+#define USART_H
+
 #ifdef __cplusplus
- extern "C" {
+/**
+ * @brief UART1_Init
+ */
+extern "C" {
 #endif
 
-/* Includes ------------------------------------------------------------------*/
-#include "main.h"
-
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
+#include "hal_ll.h"
 
 extern UART_HandleTypeDef huart1;
 
-/* USER CODE BEGIN Private defines */
+void UART1_Init(void (*cb)(void));
+void UART1_DeInit(void);
 
-/* USER CODE END Private defines */
+void HAL_UART_MspDeInit(UART_HandleTypeDef *uartHandle);
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
 
-void MX_USART1_UART_Init(void);
-
-/* USER CODE BEGIN Prototypes */
-
-/* USER CODE END Prototypes */
+#if defined(DEBUG_USART)
+#if (DEBUG_USART == 1)
+#define DEBUG_USART_Init    UART1_Init
+#define DEBUG_USART_DeInit  UART1_DeInit
+#define DEBUG_huart         huart1
+#endif
+#endif
 
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ usart_H */
 
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+#endif // USART_H

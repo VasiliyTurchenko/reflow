@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "unused.h"
 #include "hex_gen.h"
 
 #define ADDR_FIELD	3
@@ -39,7 +40,7 @@ char mybtol(char b)
  * @param b
  * @return byte with b in low nibble
  */
-static char cton(char b)
+static char ATTR_UNUSED cton(char b)
 {
 	if ((b <= 0x39) && (b >= 0x30)) {
 		b = b - 0x30;
@@ -131,7 +132,8 @@ int HexGenEOF(char *dst) // generates EOF record type
 /**
  * @brief uint32_to_asciiz uint32_t value to ascii string
  * @param num value to be converted
- * @param result_string is a pointer to the string of the enough length to hold up to 10 symbols
+ * @param result_string is a pointer to the string of the enough length to hold
+ * up to 10 symbols
  * @retval none
  */
 void uint32_to_asciiz(uint32_t num, char *result_string)
@@ -144,9 +146,35 @@ void uint32_to_asciiz(uint32_t num, char *result_string)
 }
 
 /**
+ * @brief uint32_to_asciiz_hex uint32_t value to ascii hex string
+ * @param num value to be converted
+ * @param result_string is a pointer to the array of 8 bytes
+ * @retval none
+ */
+void uint32_to_asciiz_hex(uint32_t num, void *result_string)
+{
+    size_t i = 8U;
+    /* MISRA 2012 rule 11.5 */
+    uint8_t *pr = (uint8_t *)result_string;
+    while (i > 0U) {
+        size_t p = i - 1U;
+        pr[p]	 = (uint8_t)(num & 0x000FU);
+        if (pr[p] < 0x0AU) {
+            pr[p] += 0x30U;
+        } else {
+            pr[p] += 0x37U;
+        }
+        i--;
+        /* MISRA 2012 rule 17.8 */
+        num = (uint32_t)num >> 4U;
+    }
+}
+
+/**
   * @brief	int32_to_asciiz converts int32_t value to asciiz string
   * @param	num value to be converted
-  * @param	result_string pointer to the string of the enough length to hold up to 11 symbols
+ * @param	result_string pointer to the string of the enough length to hold
+ * up to 11 symbols
   * @retval	none
   */
 void int32_to_asciiz(int32_t num, char *result_string)
@@ -168,12 +196,12 @@ void int32_to_asciiz(int32_t num, char *result_string)
  * @brief reverse K&R function
  * @param s
  */
-void reverse(char s[])
+static void reverse(char s[])
 {
 	char c;
-	size_t j = strlen(s) - 1u;
+    size_t j = strlen(s) - 1U;
 	size_t i;
-	for (i = 0; i < j; i++, j--) {
+    for (i = 0U; i < j; i++, j--) {
 		c = s[i];
 		s[i] = s[j];
 		s[j] = c;
@@ -184,7 +212,8 @@ void reverse(char s[])
   * @brief	uint16_to_asciiz converts uint16_t value to asciiz string
   * @note
   * @param	num value to be converted
-  * @param	result_string pointer to the string of the enough length to hold up to 5 symbols
+ * @param	result_string pointer to the string of the enough length to hold
+ * up to 5 symbols
   * @retval	none
   */
 void uint16_to_asciiz(uint16_t num, char *result_string)
@@ -200,7 +229,8 @@ void uint16_to_asciiz(uint16_t num, char *result_string)
   * @brief	uint8_to_asciiz converts uint8_t value to asciiz string
   * @note
   * @param	num value to be converted
-  * @param	result_string pointer to the string of the enough length to hold up to 3 symbols
+ * @param	result_string pointer to the string of the enough length to hold
+ * up to 3 symbols
   * @retval	none
   */
 void uint8_to_asciiz(uint8_t num, char *result_string)

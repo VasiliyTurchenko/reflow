@@ -42,6 +42,8 @@ message(STATUS "CMAKE_TOOLCHAIN_FILE = " ${CMAKE_TOOLCHAIN_FILE})
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "CMAKE_SYSROOT =  ${CMAKE_SYSROOT}")
 
+include(compiler/sources_list.cmake)
+
 if(NOT CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME)
     message(STATUS "Cross-compiling...")
 

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file unused.h
-  * @author  Vasiliy Turchenko vasily.turchenko@huld.io
+  * @author  Vasiliy Turchenko
   * @version V0.0.1
   * @date    26-Mar-2020
   * @brief   unused result macro

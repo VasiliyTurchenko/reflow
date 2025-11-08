@@ -25,6 +25,7 @@ uint8_t adec2byte(const void * const buf, size_t len);
 uint16_t ahex2uint16(const void * const buf, size_t len);
 uint16_t adec2uint16(const void * const buf, size_t len);
 
+uint32_t ahex2uint32(const void *const buf, size_t len);
 #ifdef __cplusplus
 }
 #endif
