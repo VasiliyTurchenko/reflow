@@ -18,11 +18,12 @@ get_mcu_cmakelists("${mcu}")
 
 message(STATUS "CMSIS_FOLDER: ${CMSIS_FOLDER}")
 message(STATUS "HAL_LL_FOLDER: ${HAL_LL_FOLDER}")
-message(status "MCU_COMPILE_FLAGS: ${MCU_COMPILE_FLAGS}")
-message(status "MCU_COMPILE_DEFS: ${MCU_COMPILE_DEFS}")
+message(STATUS "MCU_COMPILE_FLAGS: ${MCU_COMPILE_FLAGS}")
+message(STATUS "MCU_COMPILE_DEFS: ${MCU_COMPILE_DEFS}")
+
+add_subdirectory(${HAL_LL_FOLDER} ${CMAKE_BINARY_DIR}/libhal_build)
 
 include(${CMSIS_FOLDER}/sources_list.cmake)
-include(${HAL_LL_FOLDER}/sources_list.cmake)
 
 # The path to the asm startup file(s)
 set(STARTUP_CODE_DIR ${HAL_LL_FOLDER}/../startup/)
@@ -49,7 +50,6 @@ target_compile_definitions(${EXEC_NAME} PRIVATE ${COMMON_DEFS} ${MCU_COMPILE_DEF
 target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_SRC_LIST})
 target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_THIRD_PARTY_LIST})
 target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_CMSIS_LIST})
-target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_MCU_DRIVER_LIST})
 
 target_include_directories(${EXEC_NAME} PRIVATE ${INCLUDE_DIRS_STM32F103_LIST})
 
@@ -66,9 +66,8 @@ set(LDSCRIPT ${LINKER_SCRIPTS_DIR}/STM32F103C8Tx_FLASH.ld)
 # ##################################################################################################
 # ##################################################################################################
 
-set(${EXEC_NAME}_LIST_OF_SOURCES
-    ${SRC_SOURCES_LIST} ${THIRD_PARTY_SOURCES_LIST} ${CMSIS_SOURCES_LIST}
-    ${MCU_DRIVER_SOURCES_LIST} ${STM32F103_SOURCES_LIST})
+set(${EXEC_NAME}_LIST_OF_SOURCES ${SRC_SOURCES_LIST} ${THIRD_PARTY_SOURCES_LIST}
+                                 ${CMSIS_SOURCES_LIST} ${STM32F103_SOURCES_LIST})
 
 target_sources(${EXEC_NAME} PRIVATE ${${EXEC_NAME}_LIST_OF_SOURCES} ${STARTUP_CODE_SOURCE})
 
@@ -87,10 +86,11 @@ target_link_options(
     ${COMPILE_FLAGS})
 
 target_link_libraries(
-    ${EXEC_NAME} c # c runtime
+    ${EXEC_NAME}
+    c # c runtime
     m # math
     nosys # for non-os
-)
+    hal)
 
 # we do not need bin and hex
 stm32_add_hex_bin_targets(${EXEC_NAME})

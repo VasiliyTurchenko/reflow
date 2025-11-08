@@ -13,26 +13,18 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
-//#include <stdio.h>
 
-#ifdef STM32F303xC
-#include "stm32f3xx.h"
-#elif STM32F103xB
-#include "stm32f1xx.h"
-#else
-#error MCU NOT DEFINED
-#endif
-
+#include "hal_ll.h"
 #include "sys_cfg.h"
 
 /*-------------------------------------------------------------------------------------------------
 
-			Packet size
+            Packet size
 
 
 
 USART Speed
-		64	128	256	512	1024	2048
+        64	128	256	512	1024	2048
 115200	11520	5,6	11,1	22,2	44,4	88,9	177,8
 57600	5760	11,1	22,2	44,4	88,9	177,8	355,6
 38400	3840	16,7	33,3	66,7	133,3	266,7	533,3
