@@ -36,7 +36,7 @@ struct_Context *context1 = &OLEDcontext;
 unsigned char FrameBuffer1[(128U / CHAR_BIT) * (64U)];
 
 /* ---------------- initializes the framebuffer ----------------------------- */
-uint8_t FB_Init()
+uint8_t FB_Init(void)
 {
     context1->pDevFB->pFB            = &FrameBuffer1[0];
     context1->pDevFB->FBWidth        = 128;

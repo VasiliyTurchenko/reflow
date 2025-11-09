@@ -252,7 +252,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         /* add 1000 us */
         counter_1us += 1000U;
 
-#ifdef USE_FRAMEBUFFER
+//#ifdef USE_FRAMEBUFFER
+#if(0)
         if ((HAL_GetTick() % 64U) == 0U) {
             if (context1->pDevFB->fUpdateScreen != NULL) {
                 context1->pDevFB->fUpdateScreen(&hspi2, context1->pDevFB);
