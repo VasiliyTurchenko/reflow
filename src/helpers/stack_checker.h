@@ -35,7 +35,8 @@ extern "C" {
 #include <stddef.h>
 
 #ifdef USE_FreeRTOS
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 typedef struct {
     TaskHandle_t h;

@@ -14,13 +14,22 @@ extern "C" {
 #endif
 #include <stdbool.h>
 
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 #include "mutex_helpers.h"
 
 EXPORT_MUTEX_HANDLE(xfunc_out)
 EXPORT_MUTEX_HANDLE(logging)
+EXPORT_MUTEX_HANDLE(spi2)
 
-extern osThreadId comm_taskHandle;
+EXPORT_TASK_HANDLE(comm)
+EXPORT_TASK_HANDLE(default)
+EXPORT_TASK_HANDLE(kbd)
+EXPORT_TASK_HANDLE(control)
+EXPORT_TASK_HANDLE(temperatur)
+EXPORT_TASK_HANDLE(ui)
+
 
 #ifdef __cplusplus
 }

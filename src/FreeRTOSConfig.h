@@ -11,12 +11,12 @@
     the terms of the GNU General Public License (version 2) as published by the
     Free Software Foundation >>!AND MODIFIED BY!<< the FreeRTOS exception.
 
-	***************************************************************************
+    ***************************************************************************
     >>!   NOTE: The modification to the GPL is included to allow you to     !<<
     >>!   distribute a combined work that includes FreeRTOS without being   !<<
     >>!   obliged to provide the source code for proprietary components     !<<
     >>!   outside of the FreeRTOS kernel.                                   !<<
-	***************************************************************************
+    ***************************************************************************
 
     FreeRTOS is distributed in the hope that it will be useful, but WITHOUT ANY
     WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -38,17 +38,17 @@
     ***************************************************************************
 
     http://www.FreeRTOS.org/FAQHelp.html - Having a problem?  Start by reading
-	the FAQ page "My application does not run, what could be wrong?".  Have you
-	defined configASSERT()?
+    the FAQ page "My application does not run, what could be wrong?".  Have you
+    defined configASSERT()?
 
-	http://www.FreeRTOS.org/support - In return for receiving this top quality
-	embedded software for free we request you assist our global community by
-	participating in the support forum.
+    http://www.FreeRTOS.org/support - In return for receiving this top quality
+    embedded software for free we request you assist our global community by
+    participating in the support forum.
 
-	http://www.FreeRTOS.org/training - Investing in training allows your team to
-	be as productive as possible as early as possible.  Now you can receive
-	FreeRTOS training directly from Richard Barry, CEO of Real Time Engineers
-	Ltd, and the world's leading authority on the world's leading RTOS.
+    http://www.FreeRTOS.org/training - Investing in training allows your team to
+    be as productive as possible as early as possible.  Now you can receive
+    FreeRTOS training directly from Richard Barry, CEO of Real Time Engineers
+    Ltd, and the world's leading authority on the world's leading RTOS.
 
     http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
     including FreeRTOS+Trace - an indispensable productivity tool, a DOS
@@ -84,9 +84,9 @@
  * See http://www.freertos.org/a00110.html.
  *----------------------------------------------------------*/
 
-/* USER CODE BEGIN Includes */   	      
+/* USER CODE BEGIN Includes */
 /* Section where include file can be added */
-/* USER CODE END Includes */ 
+/* USER CODE END Includes */
 
 /* Ensure stdint is only used by the compiler, and not the assembler. */
 #if defined(__ICCARM__) || defined(__CC_ARM) || defined(__GNUC__)
@@ -101,12 +101,12 @@
 #define configUSE_TICK_HOOK                      1
 #define configCPU_CLOCK_HZ                       ( SystemCoreClock )
 #define configTICK_RATE_HZ                       ((TickType_t)1000)
-#define configMAX_PRIORITIES                     ( 7 )
+#define configMAX_PRIORITIES                     ( 15 )
 #define configMINIMAL_STACK_SIZE                 ((uint16_t)128)
 #define configMAX_TASK_NAME_LEN                  ( 16 )
 #define configUSE_16_BIT_TICKS                   0
 #define configUSE_MUTEXES                        1
-#define configQUEUE_REGISTRY_SIZE                8
+#define configQUEUE_REGISTRY_SIZE                0
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  1
 
 /* Co-routine definitions. */
@@ -124,6 +124,7 @@ to exclude the API function. */
 #define INCLUDE_vTaskDelay                  1
 #define INCLUDE_xTaskGetSchedulerState      1
 #define INCLUDE_xTaskGetHandle              1
+#define INCLUDE_uxTaskGetStackHighWaterMark 1
 
 /* Cortex-M specific definitions. */
 #ifdef __NVIC_PRIO_BITS
@@ -153,7 +154,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
 /* USER CODE BEGIN 1 */
-#define configASSERT( x ) if ((x) == 0) {taskDISABLE_INTERRUPTS(); for( ;; );} 
+#define configASSERT( x ) if ((x) == 0) {taskDISABLE_INTERRUPTS(); for( ;; );}
 /* USER CODE END 1 */
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
@@ -165,8 +166,10 @@ standard names. */
               to prevent overwriting SysTick_Handler defined within STM32Cube HAL */
 #define xPortSysTickHandler SysTick_Handler
 
-/* USER CODE BEGIN Defines */   	      
+/* USER CODE BEGIN Defines */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
-/* USER CODE END Defines */ 
+/* USER CODE END Defines */
+
+#define configENABLE_BACKWARD_COMPATIBILITY 0
 
 #endif /* FREERTOS_CONFIG_H */

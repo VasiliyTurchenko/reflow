@@ -24,7 +24,9 @@
  * IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "task.h"
+
 #include "platform_time_util.h"
 #include "platform_reboot.h"
 #include "logging.h"

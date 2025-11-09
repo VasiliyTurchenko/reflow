@@ -1,5 +1,5 @@
 message(STATUS "Processing ${CMAKE_CURRENT_LIST_FILE}...")
-SET(GROUP_SRC_SRC
+set(GROUP_SRC_SRC
 	${CMAKE_CURRENT_LIST_DIR}/FreeRTOSConfig.h
 	${CMAKE_CURRENT_LIST_DIR}/adc.c
 	${CMAKE_CURRENT_LIST_DIR}/adc.h
@@ -28,10 +28,9 @@ SET(GROUP_SRC_SRC
 	${CMAKE_CURRENT_LIST_DIR}/usart.c
 	${CMAKE_CURRENT_LIST_DIR}/usart.h
 	${CMAKE_CURRENT_LIST_DIR}/wwdg.c
-	${CMAKE_CURRENT_LIST_DIR}/wwdg.h
-) # of GROUP_SRC_SRC
+	${CMAKE_CURRENT_LIST_DIR}/wwdg.h) # of GROUP_SRC_SRC
 
-SET(GROUP_APP_SRC
+set(GROUP_APP_SRC
 	${CMAKE_CURRENT_LIST_DIR}/app/comm_task.c
 	${CMAKE_CURRENT_LIST_DIR}/app/comm_task.h
 	${CMAKE_CURRENT_LIST_DIR}/app/control_task.c
@@ -45,10 +44,9 @@ SET(GROUP_APP_SRC
 	${CMAKE_CURRENT_LIST_DIR}/app/temperatur_task.c
 	${CMAKE_CURRENT_LIST_DIR}/app/temperatur_task.h
 	${CMAKE_CURRENT_LIST_DIR}/app/ui_task.c
-	${CMAKE_CURRENT_LIST_DIR}/app/ui_task.h
-) # of GROUP_APP_SRC
+	${CMAKE_CURRENT_LIST_DIR}/app/ui_task.h) # of GROUP_APP_SRC
 
-SET(GROUP_BSP_SRC
+set(GROUP_BSP_SRC
 	${CMAKE_CURRENT_LIST_DIR}/bsp/door_pwm.h
 	${CMAKE_CURRENT_LIST_DIR}/bsp/door_servo.c
 	${CMAKE_CURRENT_LIST_DIR}/bsp/door_servo.h
@@ -58,19 +56,17 @@ SET(GROUP_BSP_SRC
 	${CMAKE_CURRENT_LIST_DIR}/bsp/parameters_storage.c
 	${CMAKE_CURRENT_LIST_DIR}/bsp/parameters_storage.h
 	${CMAKE_CURRENT_LIST_DIR}/bsp/temerature_measurement.c
-	${CMAKE_CURRENT_LIST_DIR}/bsp/temerature_measurement.h
-) # of GROUP_BSP_SRC
+	${CMAKE_CURRENT_LIST_DIR}/bsp/temerature_measurement.h) # of GROUP_BSP_SRC
 
-SET(GROUP_DISPLAY_SRC
+set(GROUP_DISPLAY_SRC
 	${CMAKE_CURRENT_LIST_DIR}/display/display_pins.h
 	${CMAKE_CURRENT_LIST_DIR}/display/framebuffer.c
 	${CMAKE_CURRENT_LIST_DIR}/display/framebuffer.h
 	${CMAKE_CURRENT_LIST_DIR}/display/ssd1306.c
 	${CMAKE_CURRENT_LIST_DIR}/display/ssd1306.h
-	${CMAKE_CURRENT_LIST_DIR}/display/tvv_macros.h
-) # of GROUP_DISPLAY_SRC
+	${CMAKE_CURRENT_LIST_DIR}/display/tvv_macros.h) # of GROUP_DISPLAY_SRC
 
-SET(GROUP_DISPLAY_FONT8X8_MASTER_SRC
+set(GROUP_DISPLAY_FONT8X8_MASTER_SRC
 	${CMAKE_CURRENT_LIST_DIR}/display/font8x8-master/font8x8.h
 	${CMAKE_CURRENT_LIST_DIR}/display/font8x8-master/font8x8_basic.h
 	${CMAKE_CURRENT_LIST_DIR}/display/font8x8-master/font8x8_block.h
@@ -82,9 +78,9 @@ SET(GROUP_DISPLAY_FONT8X8_MASTER_SRC
 	${CMAKE_CURRENT_LIST_DIR}/display/font8x8-master/font8x8_latin.h
 	${CMAKE_CURRENT_LIST_DIR}/display/font8x8-master/font8x8_misc.h
 	${CMAKE_CURRENT_LIST_DIR}/display/font8x8-master/font8x8_sga.h
-) # of GROUP_DISPLAY_FONT8X8_MASTER_SRC
+)# of GROUP_DISPLAY_FONT8X8_MASTER_SRC
 
-SET(GROUP_HELPERS_SRC
+set(GROUP_HELPERS_SRC
 	${CMAKE_CURRENT_LIST_DIR}/helpers/CAssert.h
 	${CMAKE_CURRENT_LIST_DIR}/helpers/FREERTOS-openocd.c
 	${CMAKE_CURRENT_LIST_DIR}/helpers/ascii_helpers.c
@@ -126,29 +122,22 @@ SET(GROUP_HELPERS_SRC
 	${CMAKE_CURRENT_LIST_DIR}/helpers/watchdog.c
 	${CMAKE_CURRENT_LIST_DIR}/helpers/watchdog.h
 	${CMAKE_CURRENT_LIST_DIR}/helpers/xprintf.c
-	${CMAKE_CURRENT_LIST_DIR}/helpers/xprintf.h
-) # of GROUP_HELPERS_SRC
+	${CMAKE_CURRENT_LIST_DIR}/helpers/xprintf.h) # of GROUP_HELPERS_SRC
 
-SET(GROUP_MENU_SRC
-	${CMAKE_CURRENT_LIST_DIR}/menu/menu.c
-	${CMAKE_CURRENT_LIST_DIR}/menu/menu.h
-) # of GROUP_MENU_SRC
+set(GROUP_MENU_SRC ${CMAKE_CURRENT_LIST_DIR}/menu/menu.c ${CMAKE_CURRENT_LIST_DIR}/menu/menu.h
+)# of GROUP_MENU_SRC
 
-SET(GROUP_PLATFORM_FREERTOS_SRC
+set(GROUP_PLATFORM_FREERTOS_SRC
 	${CMAKE_CURRENT_LIST_DIR}/platform/freertos/platform_reboot.h
-	${CMAKE_CURRENT_LIST_DIR}/platform/freertos/platform_threading_defs.h
 	${CMAKE_CURRENT_LIST_DIR}/platform/freertos/platform_time_util.c
-	${CMAKE_CURRENT_LIST_DIR}/platform/freertos/platform_time_util.h
-) # of GROUP_PLATFORM_FREERTOS_SRC
+	${CMAKE_CURRENT_LIST_DIR}/platform/freertos/platform_time_util.h) # of
+                                                                      # GROUP_PLATFORM_FREERTOS_SRC
 
-SET(GROUP_PROFILES_SRC
-	${CMAKE_CURRENT_LIST_DIR}/profiles/profiles.c
-	${CMAKE_CURRENT_LIST_DIR}/profiles/profiles.h
-	${CMAKE_CURRENT_LIST_DIR}/profiles/regulator.c
-) # of GROUP_PROFILES_SRC
+set(GROUP_PROFILES_SRC
+	${CMAKE_CURRENT_LIST_DIR}/profiles/profiles.c ${CMAKE_CURRENT_LIST_DIR}/profiles/profiles.h
+	${CMAKE_CURRENT_LIST_DIR}/profiles/regulator.c) # of GROUP_PROFILES_SRC
 
-
-SET(INCLUDE_DIRS_SRC_LIST
+set(INCLUDE_DIRS_SRC_LIST
 	${CMAKE_CURRENT_LIST_DIR}
 	${CMAKE_CURRENT_LIST_DIR}/app
 	${CMAKE_CURRENT_LIST_DIR}/bsp
@@ -157,10 +146,9 @@ SET(INCLUDE_DIRS_SRC_LIST
 	${CMAKE_CURRENT_LIST_DIR}/helpers
 	${CMAKE_CURRENT_LIST_DIR}/menu
 	${CMAKE_CURRENT_LIST_DIR}/platform/freertos
-	${CMAKE_CURRENT_LIST_DIR}/profiles
-) # of INCLUDE_DIRS_SRC_LIST
+	${CMAKE_CURRENT_LIST_DIR}/profiles) # of INCLUDE_DIRS_SRC_LIST
 
-SET(SRC_SOURCES_LIST
+set(SRC_SOURCES_LIST
 	${GROUP_SRC_SRC}
 	${GROUP_APP_SRC}
 	${GROUP_BSP_SRC}
@@ -169,5 +157,4 @@ SET(SRC_SOURCES_LIST
 	${GROUP_HELPERS_SRC}
 	${GROUP_MENU_SRC}
 	${GROUP_PLATFORM_FREERTOS_SRC}
-	${GROUP_PROFILES_SRC}
-) # of SRC_SOURCES_LIST
+	${GROUP_PROFILES_SRC}) # of SRC_SOURCES_LIST

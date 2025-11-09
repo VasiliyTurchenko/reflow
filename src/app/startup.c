@@ -86,7 +86,7 @@ ErrorStatus AppStartUp(void)
     Transmit_non_RTOS = true;
 
     log_set_mask_on(MSG_LEVEL_ALL);
-    log_nice_mode_on();
+    log_nice_mode_off();
 
     log_xputs(MSG_LEVEL_INFO, "\n\nStarting up...\n");
     log_xputs(MSG_LEVEL_INFO, id);

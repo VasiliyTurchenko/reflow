@@ -50,7 +50,8 @@ volatile uint32_t SPI2_TxCplt_flag;
 volatile uint32_t RX_ready_flag;
 
 void SystemClock_Config(void);
-void MX_FREERTOS_Init(void);
+extern void MX_FREERTOS_Init(void);
+extern void printAllTasksInfo(void);
 
 /**
   * @brief  The application entry point.
@@ -82,18 +83,17 @@ int main(void)
         NVIC_SystemReset();
     }
 
+    printAllTasksInfo();
     extern const int uxTopUsedPriority;
     log_xprintf(MSG_LEVEL_TASK_INIT, "&uxTopUsedPriority = 0x%08LX", &uxTopUsedPriority);
-
-    HAL_Delay(200U);
-
+    HAL_Delay(50U);
     debug_sink_switch_to_RTOS();
 
     MX_FREERTOS_Init();
 
     debug_sink_update_mutexes();
 
-    RESULT_UNUSED osKernelStart();
+    RESULT_UNUSED vTaskStartScheduler();
 
     /* We should never get here as control is now taken by the scheduler */
     /* Infinite loop */

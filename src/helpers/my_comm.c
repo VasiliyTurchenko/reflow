@@ -63,12 +63,12 @@ typedef struct out_stream_tag {
 #ifdef WITH_RTOS
     /* Tx buffers access mutex */
     /* defined in freertos.c */
-    osMutexId  xfunc_out_MutexHandle;
-    osThreadId comm_taskHandle;
+    SemaphoreHandle_t xfunc_out_MutexHandle;
+    TaskHandle_t      comm_taskHandle;
 #endif
 
-    uint32_t    fullBufferTransmitTime_ms;
-    uint32_t    LastTransmitStartTime_ms;
+    uint32_t fullBufferTransmitTime_ms;
+    uint32_t LastTransmitStartTime_ms;
 
 } out_stream_t;
 
@@ -142,7 +142,8 @@ static ErrorStatus InitComm_impl(uni_vect_t buffer, out_stream_t *o_stream,
     o_stream->comm_taskHandle       = NULL;
 
     // time calculation
-    o_stream->fullBufferTransmitTime_ms = 1 + ((1000U * o_stream->bufsize * 10) / sink_init_params->baud_rate);
+    o_stream->fullBufferTransmitTime_ms =
+            1 + ((1000U * o_stream->bufsize * 10) / sink_init_params->baud_rate);
 
     reset_o_stream(o_stream);
 
@@ -218,7 +219,8 @@ static inline void add2buf(uint8_t c)
 void myxfunc_out_no_RTOS(unsigned char c)
 {
     // check last tx time
-    if (time_now_ms() - p_act_outstream->LastTransmitStartTime_ms > p_act_outstream->fullBufferTransmitTime_ms) {
+    if (time_now_ms() - p_act_outstream->LastTransmitStartTime_ms >
+        p_act_outstream->fullBufferTransmitTime_ms) {
         Transmit();
     }
 
@@ -242,11 +244,11 @@ void myxfunc_out_no_RTOS(unsigned char c)
   */
 void myxfunc_out_RTOS(unsigned char c)
 {
-    while (osMutexWait(p_act_outstream->xfunc_out_MutexHandle, pdMS_TO_TICKS(1U)) != osOK) {
+    while (xSemaphoreTake(p_act_outstream->xfunc_out_MutexHandle, pdMS_TO_TICKS(1U)) != pdPASS) {
         /* stub */
     }
     add2buf(c);
-    RESULT_UNUSED osMutexRelease(p_act_outstream->xfunc_out_MutexHandle);
+    RESULT_UNUSED xSemaphoreGive(p_act_outstream->xfunc_out_MutexHandle);
 }
 
 /**
@@ -408,7 +410,7 @@ static ErrorStatus Transmit_RTOS_impl(out_stream_t *const o_stream)
                          ((UBaseType_t)configMAX_PRIORITIES - (UBaseType_t)1U));
 
         /* take the mutex */
-        if (osMutexWait(o_stream->xfunc_out_MutexHandle, 0) != osOK) {
+        if (xSemaphoreTake(o_stream->xfunc_out_MutexHandle, 0) != pdPASS) {
             vTaskPrioritySet(o_stream->comm_taskHandle, task_prio);
             result = SUCCESS;
             break; /* try next time*/
@@ -430,7 +432,7 @@ static ErrorStatus Transmit_RTOS_impl(out_stream_t *const o_stream)
         }
 
         o_stream->TxTail = 0U;
-        RESULT_UNUSED osMutexRelease(o_stream->xfunc_out_MutexHandle);
+        RESULT_UNUSED xSemaphoreGive(o_stream->xfunc_out_MutexHandle);
         vTaskPrioritySet(o_stream->comm_taskHandle, task_prio);
 
         if (need_exit) {

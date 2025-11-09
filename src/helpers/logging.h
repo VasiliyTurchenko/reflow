@@ -23,7 +23,7 @@ extern "C" {
 #define LOG_WITH_LEVEL
 
 /* there should be single include which holds all the mutex and thread defs */
-#include "platform_threading_defs.h"
+#include "freertos_exported.h"
 
 /* log messages level */
 

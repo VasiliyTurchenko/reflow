@@ -11,14 +11,10 @@
 #include "task_tokens.h"
 #include "logging.h"
 
-#ifdef STM32F103xB
-#include "stm32f1xx.h"
-#else
-#error MCU NOT DEFINED
-#endif
-
 #include "control_task.h"
 #include "exti.h"
+
+#include "freertos_exported.h"
 
 typedef struct heater_runtime_info {
     /* 0..50 step 2% */
@@ -41,9 +37,6 @@ typedef struct bresenham_runtime {
 
 } bresenham_runtime_t;
 
-/* which task must be notified by this task */
-extern osThreadId ui_taskHandle;
-
 /* settings for the next control cycle */
 control_task_set_t control_task_setpoints;
 
@@ -56,8 +49,6 @@ static uint32_t half_period_number = 0U;
 
 static heater_runtime_info_t top_heater_runtime    = { 0U, 0U };
 static heater_runtime_info_t bottom_heater_runtime = { 0U, 0U };
-
-extern osThreadId control_taskHandle;
 
 static void init_bresenham_runtime(bresenham_runtime_t *b, uint8_t set_point);
 

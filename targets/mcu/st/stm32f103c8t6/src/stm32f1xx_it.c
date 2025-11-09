@@ -26,7 +26,11 @@
 
 #include "main.h"
 #include "stm32f1xx_it.h"
-#include "cmsis_os.h"
+
+#include "FreeRTOS.h"
+#include "semphr.h"
+
+#include "freertos_exported.h"
 
 #include "exti.h"
 
@@ -182,7 +186,6 @@ void TIM3_IRQHandler(void)
                 BaseType_t xHigherPriorityTaskWoken;
 
                 if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-                    extern osThreadId kbd_taskHandle;
                     if (xTaskNotifyFromISR(kbd_taskHandle, 1U, eSetValueWithOverwrite,
                                            &xHigherPriorityTaskWoken) != pdPASS) {
                         // error

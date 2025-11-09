@@ -37,8 +37,7 @@
 #include "regulator.h"
 #include "door_servo.h"
 
-extern osThreadId ui_taskHandle;
-extern osThreadId control_taskHandle;
+#include "freertos_exported.h"
 
 //extern int32_t unclamped_result;
 /**

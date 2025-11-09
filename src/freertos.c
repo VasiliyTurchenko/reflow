@@ -25,11 +25,19 @@
 */
 
 #include "FreeRTOS.h"
-#include "spi.h"
+
+#include "semphr.h"
+#include "queue.h"
 #include "task.h"
+
+#include "spi.h"
+
 #include "hal_ll.h"
-#include "cmsis_os.h"
+
 #include "freertos_exported.h"
+#include "platform_time_util.h"
+
+#include "stack_checker.h"
 
 #include "comm_task.h"
 #include "kbd_task.h"
@@ -37,6 +45,53 @@
 #include "control_task.h"
 #include "logging.h"
 #include "framebuffer.h"
+
+#define ATTR_CCMRAM
+
+typedef struct {
+    task_stack_info_t tinf; // used by the stack checker
+    // add more...
+} task_context_t;
+
+/// Attributes structure for thread.
+typedef struct {
+    const char *name;       ///< name of the thread
+    uint32_t    attr_bits;  ///< attribute bits
+    void       *cb_mem;     ///< memory for control block
+    uint32_t    cb_size;    ///< size of provided memory for control block
+    void       *stack_mem;  ///< memory for stack
+    uint32_t    stack_size; ///< size of stack
+    UBaseType_t priority;   ///< initial thread priority (default: osPriorityNormal)
+    uint32_t    tz_module;  ///< TrustZone module identifier
+    uint32_t    reserved;   ///< reserved (must be 0)
+} osThreadAttr_t;
+
+/// Priority values.
+typedef enum {
+    osPriorityNone        = 0,         ///< No priority (not initialized).
+    osPriorityIdle        = 1,         ///< Reserved for Idle thread.
+    osPriorityLow         = 2,         ///< Priority: low
+    osPriorityBelowNormal = 3,         ///< Priority: below normal
+    osPriorityNormal      = 4,         ///< Priority: normal
+    osPriorityAboveNormal = 5,         ///< Priority: above normal
+    osPriorityHigh        = 6,         ///< Priority: high
+    osPriorityHigh1       = 7,         ///< Priority: high
+    osPriorityRealtime    = 13,        ///< Priority: realtime
+    osPriorityRealtime1   = 14,        ///< Priority: realtime + 1
+    osPriorityISR         = 15,        ///< Reserved for ISR deferred thread.
+    osPriorityError       = -1,        ///< System cannot determine priority or illegal priority.
+    osPriorityReserved    = 0x7FFFFFFF ///< Prevents enum down-size compiler optimization.
+} osPriority_t;
+
+#define osThreadDetached 0x00000000U ///< Thread created in detached mode (default)
+
+/// Attributes structure for mutex.
+typedef struct {
+    const char *name;      ///< name of the mutex
+    uint32_t    attr_bits; ///< attribute bits
+    void       *cb_mem;    ///< memory for control block
+    uint32_t    cb_size;   ///< size of provided memory for control block
+} osMutexAttr_t;
 
 static bool InitCompleted = false;
 extern bool Transmit_non_RTOS;
@@ -51,42 +106,72 @@ static inline void msg_task_started(void)
     log_xputs(MSG_LEVEL_TASK_INIT, task_started_msg);
 }
 
-osMutexId          xfunc_out_MutexHandle;
-osStaticMutexDef_t xfunc_out_Mutex_ControlBlock;
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-osMutexId          logging_MutexHandle;
-osStaticMutexDef_t logging_Mutex_ControlBlock;
+static SemaphoreHandle_t osStaticMutexNew(const osMutexAttr_t *attr)
+{
+    SemaphoreHandle_t hMutex;
+#if (configQUEUE_REGISTRY_SIZE > 0)
+    const char *name;
+#endif
+    hMutex = NULL;
 
-osThreadId          defaultTaskHandle;
-uint32_t            defaultTaskBuffer[128];
-osStaticThreadDef_t defaultTaskControlBlock;
+    if (attr != NULL) {
+        if ((attr->cb_mem != NULL) && (attr->cb_size >= sizeof(StaticSemaphore_t))) {
+        } else {
+            return hMutex;
+        }
 
-osThreadId          kbd_taskHandle;
-uint32_t            kbd_task_Buffer[128];
-osStaticThreadDef_t kbd_task_ControlBlock;
+#if (configSUPPORT_STATIC_ALLOCATION == 1)
+        hMutex = (SemaphoreHandle_t)xSemaphoreCreateMutexStatic(attr->cb_mem);
+#endif
+    }
 
-osThreadId          control_taskHandle;
-uint32_t            control_task_Buffer[256];
-osStaticThreadDef_t control_task_ControlBlock;
+#if (configQUEUE_REGISTRY_SIZE > 0)
+    if (hMutex != NULL) {
+        if (attr != NULL) {
+            name = attr->name;
+        } else {
+            name = NULL;
+        }
+        vQueueAddToRegistry(hMutex, name);
+    }
+#endif
+    return hMutex;
+}
 
-osThreadId          comm_taskHandle;
-uint32_t            comm_task_Buffer[200];
-osStaticThreadDef_t comm_task_ControlBlock;
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-osThreadId          temperatur_taskHandle;
-uint32_t            temperatur_task_Buffer[200];
-osStaticThreadDef_t temperatur_task_ControlBlock;
+MUTEX_MEM_DEF(xfunc_out)
 
-osThreadId          ui_taskHandle;
-uint32_t            ui_task_Buffer[200];
-osStaticThreadDef_t ui_task_ControlBlock;
+MUTEX_MEM_DEF(logging)
 
-void StartDefaultTask(void const *argument);
-void Start_kbd_task(void const *argument);
-void Start_control_task(void const *argument);
-void Start_comm_task(void const *argument);
-void Start_temperatur_task(void const *argument);
-void Start_ui_task(void const *argument);
+MUTEX_MEM_DEF(spi2)
+
+#define DEFAULT_TASK_STACK_SIZE (128U)
+TASK_MEM_DEF(default, DEFAULT_TASK_STACK_SIZE, osPriorityLow)
+
+#define KBD_TASK_STACK_SIZE (128U)
+TASK_MEM_DEF(kbd, KBD_TASK_STACK_SIZE, osPriorityNormal)
+
+#define CONTROL_TASK_STACK_SIZE (256U)
+TASK_MEM_DEF(control, CONTROL_TASK_STACK_SIZE, osPriorityRealtime)
+
+#define COMM_TASK_STACK_SIZE (200U)
+TASK_MEM_DEF(comm, COMM_TASK_STACK_SIZE, osPriorityNormal)
+
+#define TEMPERATUR_TASK_STACK_SIZE (200U)
+TASK_MEM_DEF(temperatur, TEMPERATUR_TASK_STACK_SIZE, osPriorityHigh)
+
+#define UI_TASK_STACK_SIZE (200U)
+TASK_MEM_DEF(ui, UI_TASK_STACK_SIZE, osPriorityNormal)
+
+void StartDefaultTask(void *argument);
+void Start_kbd_task(void *argument);
+void Start_control_task(void *argument);
+void Start_comm_task(void *argument);
+void Start_temperatur_task(void *argument);
+void Start_ui_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -140,6 +225,35 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 }
 /* USER CODE END GET_IDLE_TASK_MEMORY */
 
+static TaskHandle_t osStaticTaskNew(TaskFunction_t tf, osThreadAttr_t attr, void *const params)
+{
+    return xTaskCreateStatic(tf, attr.name, attr.stack_size, params, attr.priority,
+                             (StackType_t *)attr.stack_mem, (StaticTask_t *)attr.cb_mem);
+}
+
+#define ERROR_HANDLER_IF_NULL(val)                                                                 \
+    {                                                                                              \
+        if (NULL == val)                                                                           \
+            Error_Handler();                                                                       \
+    }
+static void printTaskAttr(osThreadAttr_t attr)
+{
+    log_xprintf(MSG_LEVEL_INFO, "%s: prio: %d, stack: %08LX, stack size: %d 32bit words", attr.name,
+                attr.priority, attr.stack_mem, attr.stack_size);
+}
+
+/**
+ * @brief printAllTasksInfo
+ */
+void printAllTasksInfo(void) {
+    printTaskAttr(default_task_attributes);
+    printTaskAttr(kbd_task_attributes);
+    printTaskAttr(control_task_attributes);
+    printTaskAttr(comm_task_attributes);
+    printTaskAttr(temperatur_task_attributes);
+    printTaskAttr(ui_task_attributes);
+}
+
 /**
   * @brief  FreeRTOS initialization
   * @param  None
@@ -147,42 +261,32 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
   */
 void MX_FREERTOS_Init(void)
 {
-    osMutexStaticDef(xfunc_out_Mutex, &xfunc_out_Mutex_ControlBlock);
-    xfunc_out_MutexHandle = osMutexCreate(osMutex(xfunc_out_Mutex));
-
-    osMutexStaticDef(logging_Mutex, &logging_Mutex_ControlBlock);
-    logging_MutexHandle = osMutexCreate(osMutex(logging_Mutex));
-
     /* Create the thread(s) */
-    /* definition and creation of defaultTask */
-    osThreadStaticDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128, defaultTaskBuffer,
-                      &defaultTaskControlBlock);
-    defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+    default_taskHandle = osStaticTaskNew(StartDefaultTask, default_task_attributes, NULL);
+    ERROR_HANDLER_IF_NULL(default_taskHandle);
 
-    /* definition and creation of kbd_task */
-    osThreadStaticDef(kbd_task, Start_kbd_task, osPriorityNormal, 0, 128, kbd_task_Buffer,
-                      &kbd_task_ControlBlock);
-    kbd_taskHandle = osThreadCreate(osThread(kbd_task), NULL);
+    kbd_taskHandle = osStaticTaskNew(Start_kbd_task, kbd_task_attributes, NULL);
+    ERROR_HANDLER_IF_NULL(kbd_taskHandle);
 
-    /* definition and creation of display_task */
-    osThreadStaticDef(control_task, Start_control_task, osPriorityRealtime, 0, 256,
-                      control_task_Buffer, &control_task_ControlBlock);
-    control_taskHandle = osThreadCreate(osThread(control_task), NULL);
+    control_taskHandle = osStaticTaskNew(Start_control_task, control_task_attributes, NULL);
+    ERROR_HANDLER_IF_NULL(control_taskHandle);
 
-    /* definition and creation of comm_task */
-    osThreadStaticDef(comm_task, Start_comm_task, osPriorityAboveNormal, 0, 200, comm_task_Buffer,
-                      &comm_task_ControlBlock);
-    comm_taskHandle = osThreadCreate(osThread(comm_task), NULL);
+    comm_taskHandle = osStaticTaskNew(Start_comm_task, comm_task_attributes, NULL);
+    ERROR_HANDLER_IF_NULL(comm_taskHandle);
 
-    /* definition and creation of temperatur_task */
-    osThreadStaticDef(temperatur_task, Start_temperatur_task, osPriorityRealtime, 0, 200,
-                      temperatur_task_Buffer, &temperatur_task_ControlBlock);
-    temperatur_taskHandle = osThreadCreate(osThread(temperatur_task), NULL);
+    temperatur_taskHandle =
+            osStaticTaskNew(Start_temperatur_task, temperatur_task_attributes, NULL);
+    ERROR_HANDLER_IF_NULL(temperatur_taskHandle);
 
-    /* definition and creation of ui_task */
-    osThreadStaticDef(ui_task, Start_ui_task, osPriorityNormal, 0, 200, ui_task_Buffer,
-                      &ui_task_ControlBlock);
-    ui_taskHandle = osThreadCreate(osThread(ui_task), NULL);
+    ui_taskHandle = osStaticTaskNew(Start_ui_task, ui_task_attributes, NULL);
+    ERROR_HANDLER_IF_NULL(ui_taskHandle);
+
+    /* Create the mutex(es) */
+    xfunc_out_MutexHandle = osStaticMutexNew(&xfunc_out_MutexAttr);
+    ERROR_HANDLER_IF_NULL(xfunc_out_MutexHandle);
+
+    logging_MutexHandle = osStaticMutexNew(&logging_MutexAttr);
+    ERROR_HANDLER_IF_NULL(logging_MutexHandle);
 }
 
 /**
@@ -190,7 +294,7 @@ void MX_FREERTOS_Init(void)
   * @param  argument: Not used
   * @retval None
   */
-void StartDefaultTask(void const *argument)
+void __attribute__((noreturn)) StartDefaultTask(void *argument)
 {
     UNUSED(argument);
     msg_task_started();
@@ -198,7 +302,7 @@ void StartDefaultTask(void const *argument)
         if (context1->pDevFB->fUpdateScreen != NULL) {
             context1->pDevFB->fUpdateScreen(&hspi2, context1->pDevFB);
         }
-        osDelay(50U);
+        sys_helpers_delay_ms(50U);
     }
 }
 
@@ -207,7 +311,7 @@ void StartDefaultTask(void const *argument)
 * @param argument: Not used
 * @retval None
 */
-void __attribute__((noreturn)) Start_kbd_task(void const *argument)
+void __attribute__((noreturn)) Start_kbd_task(void *argument)
 {
     kbd_task_init();
     (void)argument;
@@ -221,7 +325,7 @@ void __attribute__((noreturn)) Start_kbd_task(void const *argument)
 * @param argument: Not used
 * @retval None
 */
-void __attribute__((noreturn)) Start_control_task(void const *argument)
+void __attribute__((noreturn)) Start_control_task(void *argument)
 {
     control_task_init();
     (void)argument;
@@ -235,7 +339,7 @@ void __attribute__((noreturn)) Start_control_task(void const *argument)
 * @param argument: Not used
 * @retval None
 */
-void __attribute__((noreturn)) Start_comm_task(void const *argument)
+void __attribute__((noreturn)) Start_comm_task(void *argument)
 {
     comm_task_init();
     (void)argument;
@@ -250,11 +354,11 @@ void __attribute__((noreturn)) Start_comm_task(void const *argument)
 * @param argument: Not used
 * @retval None
 */
-void Start_temperatur_task(void const *argument)
+void __attribute__((noreturn)) Start_temperatur_task(void *argument)
 {
     UNUSED(argument);
     for (;;) {
-        osDelay(UINT32_MAX);
+        sys_helpers_delay_ms(UINT32_MAX);
     }
 }
 
@@ -263,7 +367,7 @@ void Start_temperatur_task(void const *argument)
 * @param argument: Not used
 * @retval None
 */
-void __attribute__((noreturn)) Start_ui_task(void const *argument)
+void __attribute__((noreturn)) Start_ui_task(void *argument)
 {
     ui_task_init();
     UNUSED(argument);

@@ -6,18 +6,13 @@
  *  @date 19-Jan-2020
  */
 
-#include "stdbool.h"
+#include <stdbool.h>
 
-#include "cmsis_os.h"
 #include "exti.h"
 #include "control_task.h"
 #include "main.h"
 
-#ifdef STM32F103xB
-#include "stm32f1xx.h"
-#else
-#error MCU NOT DEFINED
-#endif
+#include "freertos_exported.h"
 
 extern TIM_HandleTypeDef htim1;
 
@@ -44,7 +39,7 @@ static _Bool	need_to_notify = false;
  */
 void enable_exti_notifications(void)
 {
-	need_to_notify = true;
+    need_to_notify = true;
 }
 
 /**
@@ -52,7 +47,7 @@ void enable_exti_notifications(void)
  */
 void disable_exti_notifications(void)
 {
-	need_to_notify = false;
+    need_to_notify = false;
 }
 
 
@@ -62,39 +57,38 @@ void disable_exti_notifications(void)
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	static uint64_t current_1us_ts = 0U;
+    static uint64_t current_1us_ts = 0U;
 
-	if (GPIO_Pin == GPIO_PIN_6) {
-		current_1us_ts  = counter_1us + htim1.Instance->CNT;
-		duration = (uint32_t)(current_1us_ts - last_exti_pin_timestamp);
-		last_exti_pin_timestamp = current_1us_ts;
+    if (GPIO_Pin == GPIO_PIN_6) {
+        current_1us_ts  = counter_1us + htim1.Instance->CNT;
+        duration = (uint32_t)(current_1us_ts - last_exti_pin_timestamp);
+        last_exti_pin_timestamp = current_1us_ts;
 
-		half_periods_cnt++;
-		half_periods[half_periods_index] = duration;
-		half_periods_index++;
-		if (half_periods_index == NUM_HALF_PERIODS) {
-			half_periods_index = 0U;
-		}
+        half_periods_cnt++;
+        half_periods[half_periods_index] = duration;
+        half_periods_index++;
+        if (half_periods_index == NUM_HALF_PERIODS) {
+            half_periods_index = 0U;
+        }
 
 //		HAL_GPIO_TogglePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin);
 
-	/* notify heater control task */
-		if (need_to_notify) {
-		BaseType_t xHigherPriorityTaskWoken;
-		extern osThreadId control_taskHandle;
-		if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-			if (xTaskNotifyFromISR(control_taskHandle, EXTI_ARRIVED,
-					       eSetValueWithOverwrite,
-					       &xHigherPriorityTaskWoken) !=
-			    pdPASS) {
-				// error
-				volatile uint8_t a = 0;
-				(void)a;
-			}
-			portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-		}
-		}
-	}
+    /* notify heater control task */
+        if (need_to_notify) {
+        BaseType_t xHigherPriorityTaskWoken;
+        if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+            if (xTaskNotifyFromISR(control_taskHandle, EXTI_ARRIVED,
+                           eSetValueWithOverwrite,
+                           &xHigherPriorityTaskWoken) !=
+                pdPASS) {
+                // error
+                volatile uint8_t a = 0;
+                (void)a;
+            }
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+        }
+    }
 
 }
 
@@ -104,9 +98,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  */
 uint32_t get_mains_half_period(void)
 {
-	uint32_t retVal = 0U;
-	for (size_t i = 0U; i < NUM_HALF_PERIODS; i++) {
-		retVal += half_periods[i];
-	}
-	return (retVal / NUM_HALF_PERIODS);
+    uint32_t retVal = 0U;
+    for (size_t i = 0U; i < NUM_HALF_PERIODS; i++) {
+        retVal += half_periods[i];
+    }
+    return (retVal / NUM_HALF_PERIODS);
 }
