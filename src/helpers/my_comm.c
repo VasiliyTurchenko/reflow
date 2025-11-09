@@ -67,6 +67,9 @@ typedef struct out_stream_tag {
     osThreadId comm_taskHandle;
 #endif
 
+    uint32_t    fullBufferTransmitTime_ms;
+    uint32_t    LastTransmitStartTime_ms;
+
 } out_stream_t;
 
 /* currently only one stream exists */
@@ -107,7 +110,8 @@ static inline _Bool check_fun_list(ostream_sink_functions_t *fl)
  * @return ERROR or SUCCESS
  */
 static ErrorStatus InitComm_impl(uni_vect_t buffer, out_stream_t *o_stream,
-                                 ostream_sink_functions_t *fun_list, void *sink_init_params)
+                                 ostream_sink_functions_t     *fun_list,
+                                 const sink_init_parameters_t *sink_init_params)
 {
     ErrorStatus result = ERROR;
 
@@ -137,6 +141,9 @@ static ErrorStatus InitComm_impl(uni_vect_t buffer, out_stream_t *o_stream,
     o_stream->xfunc_out_MutexHandle = NULL;
     o_stream->comm_taskHandle       = NULL;
 
+    // time calculation
+    o_stream->fullBufferTransmitTime_ms = 1 + ((1000U * o_stream->bufsize * 10) / sink_init_params->baud_rate);
+
     reset_o_stream(o_stream);
 
     p_act_outstream = o_stream;
@@ -160,7 +167,8 @@ static ErrorStatus InitComm_impl(uni_vect_t buffer, out_stream_t *o_stream,
  * @param sink_init_params pointer to the sink init parameters
  * @return ERROR or SUCCESS
  */
-ErrorStatus InitComm(uni_vect_t buffer, ostream_sink_functions_t *fun_list, void *sink_init_params)
+ErrorStatus InitComm(uni_vect_t buffer, ostream_sink_functions_t *fun_list,
+                     const sink_init_parameters_t *sink_init_params)
 {
     return InitComm_impl(buffer, &out_stream, fun_list, sink_init_params);
 }
@@ -209,6 +217,11 @@ static inline void add2buf(uint8_t c)
   */
 void myxfunc_out_no_RTOS(unsigned char c)
 {
+    // check last tx time
+    if (time_now_ms() - p_act_outstream->LastTransmitStartTime_ms > p_act_outstream->fullBufferTransmitTime_ms) {
+        Transmit();
+    }
+
     ENTER_CRITICAL_SECTION_NO_RTOS();
     if (p_act_outstream->ActBufState == STATE_UNLOCKED) {
         p_act_outstream->ActBufState = STATE_LOCKED;
@@ -216,6 +229,8 @@ void myxfunc_out_no_RTOS(unsigned char c)
         p_act_outstream->ActBufState = STATE_UNLOCKED;
     }
     LEAVE_CRITICAL_SECTION_NO_RTOS();
+
+    //TODO add check and transmit
 }
 
 #ifdef WITH_RTOS
@@ -242,6 +257,7 @@ static void my_comm_switch_to_RTOS_func_impl(out_stream_t *o_s)
 {
     _Bool please_quit = false;
     do {
+        Transmit();
         ENTER_CRITICAL_SECTION_NO_RTOS();
         if (o_s->XmitState == STATE_UNLOCKED) {
             if (o_s->TxTail == 0U) {
@@ -256,12 +272,13 @@ static void my_comm_switch_to_RTOS_func_impl(out_stream_t *o_s)
         LEAVE_CRITICAL_SECTION_NO_RTOS();
         if (!please_quit) {
             uint32_t t0 = time_now_ms();
-            uint32_t t1 = t0 + 100U;
+            uint32_t t1 = t0 + o_s->fullBufferTransmitTime_ms / 2U;
             while (time_now_ms() < t1) {
                 /*  */
             };
         }
     } while (!please_quit);
+    o_s->LastTransmitStartTime_ms = 0U;
 }
 
 /**
@@ -349,6 +366,7 @@ static ErrorStatus Transmit_impl(out_stream_t *const o_stream)
 
             const size_t actual = o_stream->sink_fun.send_bytes(o_stream->pXmitTxBuf, tmptail);
             result              = (actual != tmptail) ? ERROR : SUCCESS;
+            o_stream->LastTransmitStartTime_ms = time_now_ms();
         }
     } while (false);
 

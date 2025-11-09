@@ -54,13 +54,21 @@ bod            |  64		128		256		512		1024	2048 |
 typedef void (*tc_fun)(void *arg);
 
 typedef struct {
-    int32_t (*init_sink)(void *init_params, tc_fun callback,
+    uint32_t    baud_rate;
+} sink_init_parameters_t;
+
+typedef struct {
+
+    int32_t (*init_sink)(const sink_init_parameters_t *init_params, tc_fun callback,
                          void *callback_param);       ///< open real sink (ser. port, etc.)
+
     int32_t (*deinit_sink)(int32_t h);                ///< close the sink
+
     size_t (*send_bytes)(uint8_t *pbytes, size_t nb); ///< actual transmit function
+
 } ostream_sink_functions_t;
 
-ErrorStatus InitComm(uni_vect_t buffer, ostream_sink_functions_t *fun_list, void *sink_init_params);
+ErrorStatus InitComm(uni_vect_t buffer, ostream_sink_functions_t *fun_list, const sink_init_parameters_t *sink_init_params);
 ErrorStatus Transmit(void);
 
 #ifdef WITH_RTOS

@@ -47,11 +47,11 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 }
 
 /* */
-void UART1_Init(void (*cb)(void))
+void UART1_Init(void (*cb)(void), uint32_t br)
 {
     UART1_cb_                = cb;
     huart1.Instance          = USART1;
-    huart1.Init.BaudRate     = 57600;
+    huart1.Init.BaudRate     = br;
     huart1.Init.WordLength   = UART_WORDLENGTH_8B;
     huart1.Init.StopBits     = UART_STOPBITS_1;
     huart1.Init.Parity       = UART_PARITY_NONE;

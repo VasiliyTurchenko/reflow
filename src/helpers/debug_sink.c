@@ -38,7 +38,8 @@ _Bool         Transmit_non_RTOS = false; ///< used in non-rtos isr
 static void  *tc_callbak_param  = NULL;
 static tc_fun tc_callback       = NULL;
 
-static int32_t usart_init(void *init_params, tc_fun callback,
+
+static int32_t usart_init(const sink_init_parameters_t *init_params, tc_fun callback,
                           void *callback_param); ///< open real sink (ser. port, etc.)
 
 static int32_t usart_deinit(int32_t h); ///< close the sink
@@ -61,7 +62,8 @@ static uni_vect_t dsb = { .capacity = 2048U, .data_len = 0U, .pdata = debug_sink
  */
 void debug_sink_init(void)
 {
-    if (ERROR == InitComm(dsb, &deb_ostream, NULL)) {
+    static const sink_init_parameters_t p = {.baud_rate = DEBUG_UART_BAUDRATE};
+    if (ERROR == InitComm(dsb, &deb_ostream, &p)) {
         Error_Handler();
     }
 }
@@ -83,10 +85,11 @@ static void deb_usart_tc_cb(void)
  * @param callback_param
  * @return
  */
-static int32_t usart_init(void *init_params, tc_fun callback, void *callback_param)
+static int32_t usart_init(const sink_init_parameters_t *init_params, tc_fun callback, void *callback_param)
 {
     ARG_UNUSED init_params;
-    DEBUG_USART_Init(deb_usart_tc_cb);
+    assert_param(init_params != NULL);
+    DEBUG_USART_Init(deb_usart_tc_cb, init_params->baud_rate);
     tc_callbak_param = callback_param;
     tc_callback      = callback;
     return (int32_t)&DEBUG_huart;

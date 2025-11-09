@@ -262,8 +262,8 @@ void __attribute__((noreturn)) ui_task_run(void)
         if ((cnt % 20U) == 0U) {
             averaged_data_t tmp = get_temperature();
 
-            log_xprintf(MSG_LEVEL_EXT_INF, "Temperature [0, 1] = [ %d , %d]", tmp.average_val0,
-                        tmp.average_val1);
+            // log_xprintf(MSG_LEVEL_EXT_INF, "Temperature [0, 1] = [ %d , %d]", tmp.average_val0,
+            //             tmp.average_val1);
         }
     }
 }

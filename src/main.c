@@ -82,6 +82,9 @@ int main(void)
         NVIC_SystemReset();
     }
 
+    extern const int uxTopUsedPriority;
+    log_xprintf(MSG_LEVEL_TASK_INIT, "&uxTopUsedPriority = 0x%08LX", &uxTopUsedPriority);
+
     HAL_Delay(200U);
 
     debug_sink_switch_to_RTOS();
@@ -251,46 +254,5 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         /* increment us counter */
         /* add 1000 us */
         counter_1us += 1000U;
-
-//#ifdef USE_FRAMEBUFFER
-#if(0)
-        if ((HAL_GetTick() % 64U) == 0U) {
-            if (context1->pDevFB->fUpdateScreen != NULL) {
-                context1->pDevFB->fUpdateScreen(&hspi2, context1->pDevFB);
-            }
-        }
-#endif
     }
-
-#if defined(DEBUG_USART)
-    static uint32_t decimator = 0U;
-    if (Transmit_non_RTOS) {
-        if (htim->Instance == TIM1) {
-            if (0U == decimator) {
-                extern ErrorStatus Transmit(void);
-                RESULT_UNUSED      Transmit();
-                decimator = 11U;
-            }
-            decimator--;
-        }
-    }
-
-#endif
-
-#if (0)
-    if (htim->Instance == TIM3) {
-        HAL_GPIO_TogglePin(BOOST_HEATER_GPIO_Port, BOOST_HEATER_Pin);
-        if ((HAL_GetTick() & 0x01U) == 0U) {
-            BaseType_t xHigherPriorityTaskWoken;
-            if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-                extern osThreadId kbd_taskHandle;
-                if (xTaskNotifyFromISR(kbd_taskHandle, 1U, eSetValueWithOverwrite,
-                                       &xHigherPriorityTaskWoken) != pdPASS) {
-                    // error
-                }
-                portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-            }
-        }
-    }
-#endif
 }

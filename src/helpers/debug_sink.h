@@ -33,6 +33,10 @@ extern "C" {
 
 #include <stdbool.h>
 
+#if !defined(DEBUG_UART_BAUDRATE)
+#define DEBUG_UART_BAUDRATE 230400U
+#endif
+
 extern _Bool Transmit_non_RTOS;
 
 void debug_sink_init(void);

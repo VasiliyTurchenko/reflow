@@ -18,9 +18,8 @@
  * @param capacity given capacity
  * @return NULL if error, pvector if OK
  */
-uni_vect_t *uni_vector_init_static(uni_vect_t *pvector,
-								   uint8_t	   *pdata,
-								   size_t capacity){ UNI_VECTOR_INIT_BODY(uni_vect_t, uint8_t) }
+uni_vect_t *uni_vector_init_static(uni_vect_t *pvector, uint8_t *pdata,
+                                   size_t capacity){ UNI_VECTOR_INIT_BODY(uni_vect_t, uint8_t) }
 
 /**
  * @brief uni_vector_clear clears content of the vector
@@ -37,7 +36,7 @@ uni_vect_t *uni_vector_clear(uni_vect_t *pvector){ UNI_VECTOR_CLEAR_BODY(uni_vec
  */
 size_t uni_vector_push_back(uni_vect_t *pvector, uint8_t data)
 {
-	UNI_VECTOR_PUSH_BACK_BODY(uni_vect_t, uint8_t);
+    UNI_VECTOR_PUSH_BACK_BODY(uni_vect_t, uint8_t);
 }
 
 /**
@@ -47,7 +46,7 @@ size_t uni_vector_push_back(uni_vect_t *pvector, uint8_t data)
  */
 size_t uni_vector_size(uni_vect_t *pvector)
 {
-	UNI_VECTOR_SIZE_BODY(uni_vect_t, uint8_t);
+    UNI_VECTOR_SIZE_BODY(uni_vect_t, uint8_t);
 }
 
 /**
@@ -57,13 +56,13 @@ size_t uni_vector_size(uni_vect_t *pvector)
  */
 uni_vect_t uni_vector_shallow_copy(const uni_vect_t *src)
 {
-	uni_vect_t retVal = (uni_vect_t){ 0U, 0U, NULL };
-	if (src != NULL) {
-		retVal.capacity = src->capacity;
-		retVal.data_len = src->data_len;
-		retVal.pdata	= src->pdata;
-	}
-	return retVal;
+    uni_vect_t retVal = (uni_vect_t){ 0U, 0U, NULL };
+    if (src != NULL) {
+        retVal.capacity = src->capacity;
+        retVal.data_len = src->data_len;
+        retVal.pdata    = src->pdata;
+    }
+    return retVal;
 }
 
 /* deep copies one vector to another */
@@ -75,14 +74,14 @@ uni_vect_t uni_vector_shallow_copy(const uni_vect_t *src)
  */
 size_t uni_vector_copy(uni_vect_t *dst, const uni_vect_t *src)
 {
-	size_t retVal = 0U;
-	if ((dst != NULL) && (dst->pdata != NULL) && (src != NULL) && (src->pdata != NULL)) {
-		size_t		  to_copy = (src->data_len > dst->capacity) ? dst->capacity : src->data_len;
-		RESULT_UNUSED memcpy(dst->pdata, src->pdata, to_copy);
-		dst->data_len = to_copy;
-		retVal		  = to_copy;
-	}
-	return retVal;
+    size_t retVal = 0U;
+    if ((dst != NULL) && (dst->pdata != NULL) && (src != NULL) && (src->pdata != NULL)) {
+        size_t        to_copy = (src->data_len > dst->capacity) ? dst->capacity : src->data_len;
+        RESULT_UNUSED memcpy(dst->pdata, src->pdata, to_copy);
+        dst->data_len = to_copy;
+        retVal        = to_copy;
+    }
+    return retVal;
 }
 
 /**
@@ -95,19 +94,19 @@ size_t uni_vector_copy(uni_vect_t *dst, const uni_vect_t *src)
  */
 uni_vect_t *uni_vector_map(uni_vect_t *dst, size_t cap, size_t len, uint8_t *pdata)
 {
-	uni_vect_t *retVal = NULL;
-	if (dst != NULL) {
-		if (pdata != NULL) {
-			if (cap >= len) {
-				dst->capacity = cap;
-				dst->data_len = len;
-				dst->pdata	  = pdata;
-				retVal		  = dst;
-			}
-		}
-	}
+    uni_vect_t *retVal = NULL;
+    if (dst != NULL) {
+        if (pdata != NULL) {
+            if (cap >= len) {
+                dst->capacity = cap;
+                dst->data_len = len;
+                dst->pdata    = pdata;
+                retVal        = dst;
+            }
+        }
+    }
 
-	return retVal;
+    return retVal;
 }
 
 /**
@@ -118,7 +117,7 @@ uni_vect_t *uni_vector_map(uni_vect_t *dst, size_t cap, size_t len, uint8_t *pda
  * @return
  */
 uni_vect32_t *uni_vector32_init_static(uni_vect32_t *pvector, uint32_t *pdata, size_t capacity){
-	UNI_VECTOR_INIT_BODY(uni_vect32_t, uint32_t)
+    UNI_VECTOR_INIT_BODY(uni_vect32_t, uint32_t)
 }
 
 /**
@@ -127,7 +126,7 @@ uni_vect32_t *uni_vector32_init_static(uni_vect32_t *pvector, uint32_t *pdata, s
  * @return
  */
 uni_vect32_t *uni_vector32_clear(uni_vect32_t *pvector){ UNI_VECTOR_CLEAR_BODY(uni_vect32_t,
-																			   uint32_t) }
+                                                                               uint32_t) }
 
 /**
  * @brief uni_vector_ptr_init_static vector holding pointers
@@ -137,7 +136,7 @@ uni_vect32_t *uni_vector32_clear(uni_vect32_t *pvector){ UNI_VECTOR_CLEAR_BODY(u
  * @return
  */
 uni_vect_ptr_t *uni_vector_ptr_init_static(uni_vect_ptr_t *pvector, void **pdata, size_t capacity){
-	UNI_VECTOR_INIT_BODY(uni_vect_ptr_t, void **)
+    UNI_VECTOR_INIT_BODY(uni_vect_ptr_t, void **)
 } /**
  * @brief uni_vector_ptr_clear
  * @param pvector
@@ -145,5 +144,5 @@ uni_vect_ptr_t *uni_vector_ptr_init_static(uni_vect_ptr_t *pvector, void **pdata
  */
 uni_vect_ptr_t *uni_vector_ptr_clear(uni_vect_ptr_t *pvector)
 {
-	UNI_VECTOR_CLEAR_BODY(uni_vect_ptr_t, void **)
+    UNI_VECTOR_CLEAR_BODY(uni_vect_ptr_t, void **)
 }

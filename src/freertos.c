@@ -25,6 +25,7 @@
 */
 
 #include "FreeRTOS.h"
+#include "spi.h"
 #include "task.h"
 #include "hal_ll.h"
 #include "cmsis_os.h"
@@ -35,6 +36,7 @@
 #include "ui_task.h"
 #include "control_task.h"
 #include "logging.h"
+#include "framebuffer.h"
 
 static bool InitCompleted = false;
 extern bool Transmit_non_RTOS;
@@ -193,7 +195,10 @@ void StartDefaultTask(void const *argument)
     UNUSED(argument);
     msg_task_started();
     for (;;) {
-        osDelay(1);
+        if (context1->pDevFB->fUpdateScreen != NULL) {
+            context1->pDevFB->fUpdateScreen(&hspi2, context1->pDevFB);
+        }
+        osDelay(50U);
     }
 }
 

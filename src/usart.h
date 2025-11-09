@@ -38,7 +38,11 @@ extern "C" {
 
 extern UART_HandleTypeDef huart1;
 
-void UART1_Init(void (*cb)(void));
+/**
+ * @brief UART1_Init
+ * @param br one of fixes baudrate values
+ */
+void UART1_Init(void (*cb)(void), uint32_t br);
 void UART1_DeInit(void);
 
 void HAL_UART_MspDeInit(UART_HandleTypeDef *uartHandle);

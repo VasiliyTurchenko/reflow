@@ -270,7 +270,9 @@ void kbd_task_run(void)
     }
     // the required row is alredy set to 0
     const uint16_t keys_column = key_matrix_runtime.km->read_col(&key_matrix_runtime);
-    const uint16_t clrm = (uint16_t)~(key_matrix_runtime.clear_mask << (key_matrix_runtime.current_row * key_matrix_runtime.km->n_cols));
+    const uint16_t clrm =
+            (uint16_t) ~(key_matrix_runtime.clear_mask
+                         << (key_matrix_runtime.current_row * key_matrix_runtime.km->n_cols));
 
     keys_line = keys_line & clrm;
     keys_line = keys_line | keys_column;
@@ -309,11 +311,15 @@ void kbd_task_run(void)
                 }
             }
 
+            //            log_xprintf(MSG_LEVEL_EXT_INF, "%d, %d, %d, %d", key_up_cnt, key_dn_cnt, key_enter_cnt, key_esc_cnt);
+            //            log_xprintf(MSG_LEVEL_EXT_INF, "                   %d, %d, %d, %d", key_up_state, key_dn_state, key_enter_state, key_esc_state);
+
             /* events prioritization */
             key_code_t backup_evt = last_key_event;
 
             last_key_event = detect_key_event(key_up_cnt, &key_up_state);
-            key_code_t dn  = detect_key_event(key_dn_cnt, &key_dn_state);
+
+            key_code_t dn = detect_key_event(key_dn_cnt, &key_dn_state);
             if (dn != NO_KEY) {
                 last_key_event = dn;
             }
@@ -348,20 +354,6 @@ static key_code_t detect_key_event(uint8_t up_cnt, uint8_t *key_state)
 {
     key_code_t retVal = NO_KEY;
     if (up_cnt == KBD_WIN_SIZE) {
-        if (*key_state == 1U) {
-            if (key_state == &key_up_state) {
-                retVal = UP_KEY_RELEASED;
-            } else if (key_state == &key_dn_state) {
-                retVal = DN_KEY_RELEASED;
-            } else if (key_state == &key_enter_state) {
-                retVal = ENTER_KEY_RELEASED;
-            } else if (key_state == &key_esc_state) {
-                retVal = ESC_KEY_RELEASED;
-            }
-        }
-        *key_state = 0U;
-
-    } else if (up_cnt == 0U) {
         if (*key_state == 0U) {
             if (key_state == &key_up_state) {
                 retVal = UP_KEY_PRESSED;
@@ -371,9 +363,25 @@ static key_code_t detect_key_event(uint8_t up_cnt, uint8_t *key_state)
                 retVal = ENTER_KEY_PRESSED;
             } else if (key_state == &key_esc_state) {
                 retVal = ESC_KEY_PRESSED;
+            } else {
             }
         }
         *key_state = 1U;
+
+    } else if (up_cnt == 0U) {
+        if (*key_state == 1U) {
+            if (key_state == &key_up_state) {
+                retVal = UP_KEY_RELEASED;
+            } else if (key_state == &key_dn_state) {
+                retVal = DN_KEY_RELEASED;
+            } else if (key_state == &key_enter_state) {
+                retVal = ENTER_KEY_RELEASED;
+            } else if (key_state == &key_esc_state) {
+                retVal = ESC_KEY_RELEASED;
+            } else {
+            }
+        }
+        *key_state = 0U;
     }
     return retVal;
 }
