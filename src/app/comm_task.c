@@ -20,7 +20,6 @@ void comm_task_init(void)
 {
     register_magic(COMM_TASK_MAGIC);
 //	i_am_alive(COMM_TASK_MAGIC);
-    log_xputs(MSG_LEVEL_INFO, " started.");
 }
 
 /**

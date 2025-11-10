@@ -236,7 +236,6 @@ void kbd_task_init(void)
 {
     register_magic(KBD_TASK_MAGIC);
     //	i_am_alive(KBD_TASK_MAGIC);
-    log_xputs(MSG_LEVEL_INFO, " started.");
 
     uint16_t clr_mask = 0U;
     for (uint8_t i = 0U; i < key_matrix_runtime.km->n_cols; i++) {

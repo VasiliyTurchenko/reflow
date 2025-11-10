@@ -126,7 +126,7 @@ ErrorStatus AppStartUp(void)
 
     /* check EEPROM CRC */
 
-    //	Test_I2C_EEPROM(&at24c04);
+    //Test_I2C_EEPROM(&at24c04);
     eeprom_crc32_check();
 
     /* load config pool */
@@ -148,7 +148,7 @@ ErrorStatus AppStartUp(void)
     /* risin' edge occurs when mains voltage gets lower than threshold */
 
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-    HAL_Delay(1010U);
+    HAL_Delay(10U);
 
     /* calculate exti period using tim1 counter as reference */
 

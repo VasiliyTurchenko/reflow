@@ -62,7 +62,6 @@ void control_task_init(void)
 {
     register_magic(CONTROL_TASK_MAGIC);
     //	i_am_alive(CONTROL_TASK_MAGIC);
-    log_xputs(MSG_LEVEL_INFO, " started.");
 }
 
 static inline void top_heater_off(void)

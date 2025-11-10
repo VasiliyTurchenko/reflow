@@ -174,6 +174,7 @@ void Start_temperatur_task(void *argument);
 void Start_ui_task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+void printAllTasksInfo(void);
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
 void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
@@ -313,8 +314,9 @@ void __attribute__((noreturn)) StartDefaultTask(void *argument)
 */
 void __attribute__((noreturn)) Start_kbd_task(void *argument)
 {
-    kbd_task_init();
     (void)argument;
+    msg_task_started();
+    kbd_task_init();
     for (;;) {
         kbd_task_run();
     }
@@ -327,8 +329,10 @@ void __attribute__((noreturn)) Start_kbd_task(void *argument)
 */
 void __attribute__((noreturn)) Start_control_task(void *argument)
 {
-    control_task_init();
     (void)argument;
+    msg_task_started();
+    control_task_init();
+
     for (;;) {
         control_task_run();
     }
@@ -341,9 +345,9 @@ void __attribute__((noreturn)) Start_control_task(void *argument)
 */
 void __attribute__((noreturn)) Start_comm_task(void *argument)
 {
-    comm_task_init();
     (void)argument;
-
+    msg_task_started();
+    comm_task_init();
     for (;;) {
         comm_task_run();
     }
@@ -356,7 +360,8 @@ void __attribute__((noreturn)) Start_comm_task(void *argument)
 */
 void __attribute__((noreturn)) Start_temperatur_task(void *argument)
 {
-    UNUSED(argument);
+    (void)argument;
+    msg_task_started();
     for (;;) {
         sys_helpers_delay_ms(UINT32_MAX);
     }
@@ -369,9 +374,9 @@ void __attribute__((noreturn)) Start_temperatur_task(void *argument)
 */
 void __attribute__((noreturn)) Start_ui_task(void *argument)
 {
+    (void)argument;
+    msg_task_started();
     ui_task_init();
-    UNUSED(argument);
-
     for (;;) {
         ui_task_run();
     }

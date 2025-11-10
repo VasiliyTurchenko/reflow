@@ -47,7 +47,6 @@ void ui_task_init(void)
 {
     register_magic(UI_TASK_MAGIC);
     //	i_am_alive(ui_TASK_MAGIC);
-    log_xputs(MSG_LEVEL_INFO, " started.");
 }
 
 /**
